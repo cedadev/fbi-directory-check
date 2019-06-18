@@ -46,3 +46,20 @@ def query_yes_no(question, default="yes"):
         else:
             sys.stdout.write('Please respond with "yes" or "no" '
                              '(or "y" or "n").\n')
+
+def get_line_in_file(filepath, index):
+    """
+    Given a file path and and line number
+    Return the line at that line number.
+    Will return either the line or an empty string if you exceed the boundary of the file
+    :param filepath: Path to the file to read
+    :param index: Line number
+    :return: The line at that index. Either has content or empty string
+    """
+
+    with open(filepath) as reader:
+
+        for _ in range(index):
+            line = reader.readline()
+
+        return line

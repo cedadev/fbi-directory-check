@@ -40,7 +40,10 @@ setup(
     },
     install_requires=[
         'persist-queue',
-        'six'
+        'six',
+        'pika',
+        'elasticsearch',
+        'requests'
     ],
 
     # This qualifier can be used to selectively exclude Python versions -

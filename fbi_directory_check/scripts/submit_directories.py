@@ -88,7 +88,7 @@ def main():
 
     if query_yes_no('Found {} directories. Continue?'.format(len(directories))):
         for _dir in directories:
-            self.queue.put(_dir)
+            queue.put(_dir)
 
 if __name__ == '__main__':
 
