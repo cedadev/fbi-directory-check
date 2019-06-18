@@ -66,9 +66,7 @@ def main():
     configuration.read(args.conf)
 
     # Load database target
-    local_queue = configuration['local-queue']
-
-    db_location = local_queue.get('queue-location')
+    db_location = configuration.get('local-queue', 'queue-location')
     queue = persistqueue.SQLiteAckQueue(os.path.join(db_location, 'priority'), multithreading=True)
 
     # Process directories
