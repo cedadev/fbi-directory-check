@@ -33,7 +33,7 @@ setup(
     license='BSD - See fbi_directory_scanner/LICENSE file for details',
     packages=find_packages(),
     package_data={
-        'rabbit_indexer': [
+        'fbi_directory_check': [
             'LICENSE',
             'config/*.ini'
         ],
