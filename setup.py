@@ -35,7 +35,7 @@ setup(
     package_data={
         'fbi_directory_check': [
             'LICENSE',
-            'config/*.ini'
+            'conf/*.ini'
         ],
     },
     install_requires=[
