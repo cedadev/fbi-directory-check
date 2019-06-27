@@ -110,7 +110,7 @@ class ElasticsearchConsistencyChecker(object):
         Download spot configuration file and write to disk
         """
 
-        url = self.local_queue.get('spot-url')
+        url = self.conf.get('local-queue','spot-url')
 
         r = requests.get(url)
 
