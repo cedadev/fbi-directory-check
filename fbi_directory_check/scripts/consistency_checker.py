@@ -24,6 +24,7 @@ from os.path import normpath
 from datetime import datetime
 from fbi_directory_check.utils.constants import DEPOSIT, REMOVE, MKDIR, RMDIR, README
 import pika
+from hashlib import sha1
 
 logger = logging.getLogger()
 
@@ -74,7 +75,7 @@ class ElasticsearchConsistencyChecker(object):
 
     def _load_queue_params(self):
 
-        self.db_location = self.conf.get('local-queue','queue-location')
+        self.db_location = self.conf.get('local-queue', 'queue-location')
 
         self.spot_file = os.path.join(self.db_location, 'spot_file.txt')
         self.progress_file = os.path.join(self.db_location, 'spot_progress.txt')
@@ -110,7 +111,7 @@ class ElasticsearchConsistencyChecker(object):
         Download spot configuration file and write to disk
         """
 
-        url = self.conf.get('local-queue','spot-url')
+        url = self.conf.get('local-queue', 'spot-url')
 
         r = requests.get(url)
 
@@ -174,6 +175,8 @@ class ElasticsearchConsistencyChecker(object):
 
     def get_query(self, index, directory):
 
+        depth = len(directory.split('/'))
+
         queries = {
             'ceda-dirs': {
                 'query': {
@@ -186,8 +189,11 @@ class ElasticsearchConsistencyChecker(object):
                             }
                         ],
                         'filter': {
-                            'term': {
-                                'depth': len(directory.split('/'))
+                            "range": {
+                                "depth": {
+                                    "gte": depth -1,
+                                    "lte": depth
+                                }
                             }
                         }
                     }
@@ -210,8 +216,9 @@ class ElasticsearchConsistencyChecker(object):
         delete_es = set()
 
         results = scan(self.es, query=self.get_query('ceda-fbi', item), index='ceda-fbi', scroll='1m')
-        result_set = {os.path.join(result['_source']['info']['directory'], result['_source']['info']['name']) for result
-                      in results}
+        result_set = {os.path.join(
+            result['_source']['info']['directory'], result['_source']['info']['name']) for result
+            in results}
 
         file_set = {file for file in listing if os.path.isfile(file)}
 
@@ -241,11 +248,16 @@ class ElasticsearchConsistencyChecker(object):
 
     def compare_ceda_dirs(self, item, listing):
 
+        # Query elasticsearch for matches to the item directory
         results = scan(self.es, query=self.get_query('ceda-dirs', item), index='ceda-dirs', scroll='1m')
 
         result_set = {result['_source']['path'] for result in results}
 
+        # Build a set of directories from the file system
         dir_set = {normpath(_dir) for _dir in listing if os.path.isdir(_dir)}
+
+        # Add item to comparison set
+        dir_set.add(item)
 
         # Get dirs in dir_set not in ES (Need to add to ES)
         add_es = dir_set - result_set
@@ -344,6 +356,11 @@ class ElasticsearchConsistencyChecker(object):
                 self.bot_queue.put(os.path.join(abs_root, dir))
 
     def consume(self, dev=False):
+        """
+        Begins the main process of consuming the jobs
+        
+        :param dev: Flag to turn off the crawler activities
+        """
 
         manual_qsize = self.manual_queue._count()
         bot_qsize = self.bot_queue._count()
