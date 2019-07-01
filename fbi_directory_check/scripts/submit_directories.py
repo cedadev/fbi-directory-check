@@ -14,10 +14,23 @@ import os
 from fbi_directory_check.utils import query_yes_no
 import persistqueue
 from six.moves import configparser
+import fileinput
+
 
 ###############################################################
 #                                                             #
-#                       Functions                             #
+#                         Classes                             #
+#                                                             #
+###############################################################
+
+
+class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
+    pass
+
+
+###############################################################
+#                                                             #
+#                        Functions                            #
 #                                                             #
 ###############################################################
 
@@ -31,8 +44,11 @@ def get_args():
     default_config = os.path.join(os.path.dirname(__file__), '../conf/index_updater.ini')
 
     parser = argparse.ArgumentParser(description='Submit directories to be checked for consistency'
-                                                 ' with the elasticsearch indices containing files'
-                                                 ' and directories')
+                                                 ' with the elasticsearch indices.\n'
+                                                 'There are 3 usage options:\n'
+                                                 '  1. Submit a single directory for checking\n'
+                                                 '  2. Submit a tree by providing the -r flag\n'
+                                                 '  3. Pipe output from file or some other command\n')
 
     parser.add_argument('dir', type=str, help='Path to submit to consistency checker')
     parser.add_argument('-r', dest='recursive', action='store_true',
@@ -41,6 +57,7 @@ def get_args():
 
     return parser.parse_args()
 
+
 def check_path(path):
     """
     Check that we have been given a real directory
@@ -48,7 +65,6 @@ def check_path(path):
     :return: boolean
     """
     return bool(os.path.exists(path) and os.path.isdir(path))
-
 
 
 ###############################################################
@@ -72,24 +88,34 @@ def main():
     # Process directories
     directories = []
 
-    if check_path(args.dir):
+    # Check if there is input on stdin
+    if sys.stdin.isatty:
 
-        directories.append(args.dir)
+        if check_path(args.dir):
 
-        if args.recursive:
-            for root, dirs, _ in os.walk(args.dir):
-                abs_root = os.path.abspath(root)
+            directories.append(args.dir)
 
-                for dir in dirs:
-                    directories.append(os.path.join(abs_root, dir))
+            if args.recursive:
+                for root, dirs, _ in os.walk(args.dir):
+                    abs_root = os.path.abspath(root)
+
+                    for dir in dirs:
+                        directories.append(os.path.join(abs_root, dir))
+        else:
+            raise NotADirectoryError('{} is not a directory'.format(args.dir))
 
     else:
-        raise NotADirectoryError('{} is not a directory'.format(args.dir))
+        for line in fileinput.input():
+            if check_path(line.strip()):
+                directories.append(line.strip())
+            else:
+                raise NotADirectoryError('{} is not a directory'.format(args.dir))
 
-    if query_yes_no('Found {} directories. Continue?'.format(len(directories))):
-        for _dir in directories:
-            queue.put(_dir)
+    print('Found {} directories. Submitting...'.format(len(directories)))
+
+    for _dir in directories:
+        queue.put(_dir)
+
 
 if __name__ == '__main__':
-
     main()
