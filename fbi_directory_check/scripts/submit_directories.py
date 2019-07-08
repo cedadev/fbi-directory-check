@@ -11,7 +11,6 @@ __contact__ = 'richard.d.smith@stfc.ac.uk'
 
 import argparse
 import os
-from fbi_directory_check.utils import query_yes_no
 import persistqueue
 from six.moves import configparser
 import fileinput
