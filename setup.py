@@ -81,6 +81,7 @@ setup(
     entry_points={
         'console_scripts': [
             'fbi_directory_check = fbi_directory_check.scripts.submit_directories:main',
+            'fbi_q_check = fbi_directory_check.scripts.q_monitor:main',
         ],
     }
 )
