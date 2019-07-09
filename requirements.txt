@@ -1,0 +1,9 @@
+certifi==2019.6.16
+chardet==3.0.4
+elasticsearch==7.0.2
+idna==2.8
+persist-queue==0.4.2
+pika==1.0.1
+requests==2.22.0
+six==1.12.0
+urllib3==1.25.3

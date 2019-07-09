@@ -13,8 +13,6 @@ import argparse
 import os
 import persistqueue
 from six.moves import configparser
-import fileinput
-import sys
 
 
 ###############################################################
@@ -45,12 +43,15 @@ def get_args():
 
     parser = argparse.ArgumentParser(description='Submit directories to be checked for consistency'
                                                  ' with the elasticsearch indices.\n'
-                                                 'There are 3 usage options:\n'
+                                                 'There are 4 usage options:\n'
                                                  '  1. Submit a single directory for checking\n'
                                                  '  2. Submit a tree by providing the -r flag\n'
-                                                 '  3. Pipe output from file or some other command\n')
+                                                 '  3. Pipe output from file or some other command\n'
+                                                 '  4. Submit a list from file\n')
 
-    parser.add_argument('dir', type=str, help='Path to submit to consistency checker')
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--dir', type=str, help='Submit a single file for checking')
+    group.add_argument('--file', type=argparse.FileType('r'), help='Pipe a list using "-" or provide a file')
     parser.add_argument('-r', dest='recursive', action='store_true',
                         help='Recursive. Will include all directories below this point as well')
     parser.add_argument('--conf', type=str, default=default_config, help='Optional path to configuration file')
@@ -88,11 +89,8 @@ def main():
     # Process directories
     directories = []
 
-    # Check if there is input on stdin
-    if sys.stdin.isatty:
-
+    if args.dir:
         if check_path(args.dir):
-
             directories.append(args.dir)
 
             if args.recursive:
@@ -102,14 +100,15 @@ def main():
                     for dir in dirs:
                         directories.append(os.path.join(abs_root, dir))
         else:
-            raise NotADirectoryError('{} is not a directory'.format(args.dir))
+            raise OSError('{} is not a directory'.format(args.dir))
 
-    else:
-        for line in fileinput.input():
-            if check_path(line.strip()):
+    elif args.file:
+        with args.file as f:
+            data = f.readlines()
+
+        for line in data:
+            if line.strip():
                 directories.append(line.strip())
-            else:
-                raise NotADirectoryError('{} is not a directory'.format(args.dir))
 
     print('Found {} directories. Submitting...'.format(len(directories)))
 
