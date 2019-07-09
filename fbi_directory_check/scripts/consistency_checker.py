@@ -295,10 +295,12 @@ class ElasticsearchConsistencyChecker(object):
         item = q.get()
         logger.info(item)
 
-        # Get list of files and directories
-        listing = [os.path.join(item, file) for file in os.listdir(item)]
-        self.compare_ceda_fbi(item, listing)
-        self.compare_ceda_dirs(item, listing)
+        if os.path.isdir(item):
+
+            # Get list of files and directories
+            listing = [os.path.join(item, file) for file in os.listdir(item)]
+            self.compare_ceda_fbi(item, listing)
+            self.compare_ceda_dirs(item, listing)
 
         q.ack(item)
 
