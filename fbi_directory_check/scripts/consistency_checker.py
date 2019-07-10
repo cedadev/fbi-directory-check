@@ -225,7 +225,7 @@ class ElasticsearchConsistencyChecker(object):
         # Get file in file_set not in ES (Need to add to ES)
         add_es = file_set - result_set
 
-        logger.info('{} files to add to ES {}'.format(len(add_es)))
+        logger.info('{} files to add to ES'.format(len(add_es)))
         logger.debug('Files to add: {}\n'.format(add_es))
 
         # Generate messages for pika queue
@@ -249,7 +249,7 @@ class ElasticsearchConsistencyChecker(object):
         # Get dirs in dir_set not in ES (Need to add to ES)
         add_es = dir_set - result_set
 
-        logger.info('{} dirs to add to ES {}'.format(len(add_es)))
+        logger.info('{} dirs to add to ES'.format(len(add_es)))
         logger.debug('Dirs to add: {}\n'.format(add_es))
 
         # Generate messages for pika queue
