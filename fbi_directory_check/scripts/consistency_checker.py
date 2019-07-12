@@ -147,7 +147,7 @@ class ElasticsearchConsistencyChecker(object):
         channel = connection.channel()
 
         # Declare queue
-        channel.queue_declare(queue=rabbit_queue, auto_delete=True)
+        channel.queue_declare(queue=rabbit_queue, auto_delete=False)
 
         self.channel = channel
         self.rbq = rabbit_queue
