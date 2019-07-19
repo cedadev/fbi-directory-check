@@ -91,14 +91,15 @@ def main():
 
     if args.dir:
         if check_path(args.dir):
-            directories.append(args.dir)
+            abs_root = os.path.abspath(args.dir)
+
+            directories.append(abs_root)
 
             if args.recursive:
-                for root, dirs, _ in os.walk(args.dir):
-                    abs_root = os.path.abspath(root)
+                for root, dirs, _ in os.walk(abs_root):
 
                     for dir in dirs:
-                        directories.append(os.path.join(abs_root, dir))
+                        directories.append(os.path.join(root, dir))
         else:
             raise OSError('{} is not a directory'.format(args.dir))
 

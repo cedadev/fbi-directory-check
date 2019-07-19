@@ -8,11 +8,9 @@ __copyright__ = 'Copyright 2018 United Kingdom Research and Innovation'
 __license__ = 'BSD - see LICENSE file in top-level package directory'
 __contact__ = 'richard.d.smith@stfc.ac.uk'
 
-# TODO: Make sure can handler where files are on tape
 
 import persistqueue
 from six.moves.configparser import RawConfigParser
-from six.moves.configparser import ConfigParser
 import os
 from fbi_directory_check.utils import get_line_in_file
 import requests
@@ -124,7 +122,6 @@ class ElasticsearchConsistencyChecker(object):
         """
         Start Pika connection to server. This is run in each thread.
 
-        :return: pika channel
         """
 
         # Get the username and password for rabbit
