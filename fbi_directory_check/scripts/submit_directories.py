@@ -50,7 +50,7 @@ def get_args():
                                                  '  4. Submit a list from file\n')
 
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('--dir', type=str, help='Submit a single file for checking')
+    group.add_argument('--dir', type=str, help='Submit a single directory for checking')
     group.add_argument('--file', type=argparse.FileType('r'), help='Pipe a list using "-" or provide a file')
     parser.add_argument('-r', dest='recursive', action='store_true',
                         help='Recursive. Will include all directories below this point as well')
