@@ -15,6 +15,7 @@ from datetime import datetime
 from fbi_directory_check.utils.constants import DEPOSIT, MKDIR
 import pika
 
+
 class RabbitMQConnection(object):
 
     def __init__(self, config):
@@ -80,6 +81,8 @@ def get_args():
     parser.add_argument('dir', type=str, help='Directory to scan')
     parser.add_argument('-r', dest='recursive', action='store_true',
                         help='Recursive. Will include all directories below this point as well')
+    parser.add_argument('--no-files', dest='nofiles', action='store_true', help='Ignore files')
+    parser.add_argument('--no-dirs', dest='nodirs', action='store_true', help='Ignore directories')
     parser.add_argument('--conf', type=str, default=default_config, help='Optional path to configuration file')
 
     return parser.parse_args()
@@ -138,13 +141,15 @@ def main():
     # Submit items to rabbit queue for re-scan
     rabbit_connection = RabbitMQConnection(args.conf)
 
-    for directory in output_directories:
-        msg = rabbit_connection.create_message(directory, MKDIR)
-        rabbit_connection.publish_message(msg)
+    if not args.nodirs:
+        for directory in output_directories:
+            msg = rabbit_connection.create_message(directory, MKDIR)
+            rabbit_connection.publish_message(msg)
 
-    for file in output_files:
-        msg = rabbit_connection.create_message(file, DEPOSIT)
-        rabbit_connection.publish_message(msg)
+    if not args.nofiles:
+        for file in output_files:
+            msg = rabbit_connection.create_message(file, DEPOSIT)
+            rabbit_connection.publish_message(msg)
 
 
 if __name__ == '__main__':
