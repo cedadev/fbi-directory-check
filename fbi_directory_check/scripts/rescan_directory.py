@@ -12,7 +12,7 @@ import os
 import argparse
 from six.moves.configparser import RawConfigParser
 from datetime import datetime
-from fbi_directory_check.utils.constants import DEPOSIT, MKDIR
+from fbi_directory_check.utils.constants import DEPOSIT, MKDIR, README
 import pika
 
 
@@ -150,6 +150,10 @@ def main():
         for file in output_files:
             msg = rabbit_connection.create_message(file, DEPOSIT)
             rabbit_connection.publish_message(msg)
+
+            if os.path.basename(file) == README:
+                msg = rabbit_connection.create_message(file, README)
+                rabbit_connection.publish_message(msg)
 
 
 if __name__ == '__main__':
