@@ -3,7 +3,12 @@
 This code connects to a local disk based queue and is used to submit directories to be checked against the
 elasticsearch index.
 
-Differences are then submitted to the rabbit queues to be picked up by the indexing code 
+Differences are then submitted to the rabbit queues to be picked up by the indexing code.
+
+
+The diagram below shows a rough sketch of queues involved with the different processes and scripts.
+
+![Service Diagram for Directory Checker](docs/images/directory_checker_diagram.png)
 
 ## Installing
 
