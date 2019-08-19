@@ -8,7 +8,7 @@ Differences are then submitted to the rabbit queues to be picked up by the index
 
 The diagram below shows a rough sketch of queues involved with the different processes and scripts.
 
-![Service Diagram for Directory Checker](docs/images/directory_checker_diagram.png)
+![Service Diagram for Directory Checker](docs/images/directory_scanner_diagram.png)
 
 ## Installing
 
