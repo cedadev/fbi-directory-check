@@ -43,6 +43,9 @@ class ElasticsearchConsistencyChecker(object):
         # Load queue params to object
         self._load_queue_params()
 
+        # Load the fbi exchange name
+        self.fbi_exchange = self.conf.get('server', 'fbi_exchange')
+
         # Setup local queues
         self.manual_queue = persistqueue.SQLiteAckQueue(
             os.path.join(self.db_location, 'priority'),
@@ -128,8 +131,6 @@ class ElasticsearchConsistencyChecker(object):
         rabbit_user = self.conf.get('server', 'user')
         rabbit_password = self.conf.get('server', 'password')
 
-        rabbit_queue = self.conf.get('server', 'queue')
-
         # Start the rabbitMQ connection
         connection = pika.BlockingConnection(
             pika.ConnectionParameters(
@@ -143,11 +144,10 @@ class ElasticsearchConsistencyChecker(object):
         # Create a new channel
         channel = connection.channel()
 
-        # Declare queue
-        channel.queue_declare(queue=rabbit_queue, auto_delete=False)
+        # Declare relevant exchange
+        channel.exchange_declare(exchange=self.fbi_exchange, exchange_type='fanout')
 
         self.channel = channel
-        self.rbq = rabbit_queue
 
     @staticmethod
     def create_message(path, action):
@@ -165,8 +165,8 @@ class ElasticsearchConsistencyChecker(object):
 
     def publish_message(self, msg):
         self.channel.basic_publish(
-            exchange='',
-            routing_key=self.rbq,
+            exchange=self.fbi_exhange,
+            routing_key='',
             body=msg
         )
 

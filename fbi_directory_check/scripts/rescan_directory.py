@@ -26,7 +26,8 @@ class RabbitMQConnection(object):
         rabbit_user = self.conf.get('server', 'user')
         rabbit_password = self.conf.get('server', 'password')
 
-        rabbit_queue = self.conf.get('server', 'queue')
+        # Get the fbi exchange
+        self.fbi_exchange = self.conf.get('server','fbi_exchange')
 
         # Start the rabbitMQ connection
         connection = pika.BlockingConnection(
@@ -41,11 +42,10 @@ class RabbitMQConnection(object):
         # Create a new channel
         channel = connection.channel()
 
-        # Declare queue
-        channel.queue_declare(queue=rabbit_queue, auto_delete=False)
+        # Declare relevant exchanges
+        channel.exchange_declare(exchange=self.fbi_exchange, exchange_type='fanout')
 
         self.channel = channel
-        self.rbq = rabbit_queue
 
     @staticmethod
     def create_message(path, action):
@@ -63,8 +63,8 @@ class RabbitMQConnection(object):
 
     def publish_message(self, msg):
         self.channel.basic_publish(
-            exchange='',
-            routing_key=self.rbq,
+            exchange=self.fbi_exchange,
+            routing_key='',
             body=msg
         )
 
