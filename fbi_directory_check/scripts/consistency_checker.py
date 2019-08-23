@@ -165,7 +165,7 @@ class ElasticsearchConsistencyChecker(object):
 
     def publish_message(self, msg):
         self.channel.basic_publish(
-            exchange=self.fbi_exhange,
+            exchange=self.fbi_exchange,
             routing_key='',
             body=msg
         )
