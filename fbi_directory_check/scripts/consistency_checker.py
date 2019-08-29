@@ -210,7 +210,7 @@ class ElasticsearchConsistencyChecker(object):
     def compare_ceda_fbi(self, item, listing):
 
         # setup empty deletion set
-        # delete_es = set()
+        delete_es = set()
 
         results = scan(self.es, query=self.get_query('ceda-fbi', item), index='ceda-fbi', scroll='1m')
         result_set = {os.path.join(
@@ -219,15 +219,30 @@ class ElasticsearchConsistencyChecker(object):
 
         file_set = {file for file in listing if os.path.isfile(file)}
 
+        # Check if a '00FILES_ON_TAPE file exists
+        files_on_tape = any(os.path.basename(file) == '00FILES_ON_TAPE' for file in file_set)
+
         # Get file in file_set not in ES (Need to add to ES)
         add_es = file_set - result_set
 
+        # Turn off strict checking if there are files on tape as the live listing would
+        # try to delete entries in the index that are stored on tape
+        if not files_on_tape:
+            # Get files in ES not in file_set (Need to delete from ES)
+            delete_es = result_set - file_set
+
+        logger.info('{} files to add to ES {} files to delete from ES'.format(len(add_es), len(delete_es)))
+        logger.debug('Files to add: {}\n Files to remove {}'.format(add_es, delete_es))
         logger.info('{} files to add to ES'.format(len(add_es)))
         logger.debug('Files to add: {}\n'.format(add_es))
 
         # Generate messages for pika queue
         for file in add_es:
             msg = self.create_message(file, DEPOSIT)
+            self.publish_message(msg)
+
+        for file in delete_es:
+            msg = self.create_message(file, REMOVE)
             self.publish_message(msg)
 
     def compare_ceda_dirs(self, item, listing):
@@ -246,12 +261,21 @@ class ElasticsearchConsistencyChecker(object):
         # Get dirs in dir_set not in ES (Need to add to ES)
         add_es = dir_set - result_set
 
+        # Get dirs in ES not in dir_set (Need to delete from ES)
+        delete_es = result_set - dir_set
+
+        logger.info('{} dirs to add to ES {} dirs to delete from ES'.format(len(add_es), len(delete_es)))
+        logger.debug('Dirs to add: {}\n Dirs to remove {}'.format(add_es, delete_es))
         logger.info('{} dirs to add to ES'.format(len(add_es)))
         logger.debug('Dirs to add: {}\n'.format(add_es))
 
         # Generate messages for pika queue
         for file in add_es:
             msg = self.create_message(file, MKDIR)
+            self.publish_message(msg)
+
+        for file in delete_es:
+            msg = self.create_message(file, RMDIR)
             self.publish_message(msg)
 
         # Check if there are any 00README files in this dir
