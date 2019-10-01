@@ -270,12 +270,12 @@ class ElasticsearchConsistencyChecker(object):
         logger.debug('Dirs to add: {}\n'.format(add_es))
 
         # Generate messages for pika queue
-        for file in add_es:
-            msg = self.create_message(file, MKDIR)
+        for dir in add_es:
+            msg = self.create_message(dir, MKDIR)
             self.publish_message(msg)
 
-        for file in delete_es:
-            msg = self.create_message(file, RMDIR)
+        for dir in delete_es:
+            msg = self.create_message(dir, RMDIR)
             self.publish_message(msg)
 
         # Check if there are any 00README files in this dir
