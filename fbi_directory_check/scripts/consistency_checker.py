@@ -160,8 +160,9 @@ class ElasticsearchConsistencyChecker(object):
         :return: string which matches deposit log format
         """
         time = datetime.now().isoformat(sep='-')
+        size = os.path.getsize(path)
 
-        return '{}:{}:{}::'.format(time, path, action.upper())
+        return '{}:{}:{}:{}:'.format(time, path, action.upper(), size)
 
     def publish_message(self, msg):
         self.channel.basic_publish(
