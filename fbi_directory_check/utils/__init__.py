@@ -9,3 +9,4 @@ __license__ = 'BSD - see LICENSE file in top-level package directory'
 __contact__ = 'richard.d.smith@stfc.ac.uk'
 
 from .utils import get_line_in_file
+from .utils import walk_storage_links

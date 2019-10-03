@@ -13,6 +13,7 @@ import argparse
 import os
 import persistqueue
 from six.moves import configparser
+from fbi_directory_check.utils import walk_storage_links
 
 
 ###############################################################
@@ -74,6 +75,7 @@ def check_path(path):
 #                                                             #
 ###############################################################
 
+
 def main():
     # Get arguments
     args = get_args()
@@ -96,7 +98,7 @@ def main():
             directories.append(abs_root)
 
             if args.recursive:
-                for root, dirs, _ in os.walk(abs_root):
+                for root, dirs, _ in walk_storage_links(abs_root):
 
                     for dir in dirs:
                         directories.append(os.path.join(root, dir))
