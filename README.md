@@ -80,6 +80,6 @@ Options:
 | Option | Description |
 | ------ | ----------- | 
 | -r     | Will search all directories recursively |
-| --dir | Will exclude files from the results and only change directories |
-| --file  | Will exclude directories from the results and only change files |
+| --dir | Accepts a directory path |
+| --file  | Accepts a file input |
 | --conf | Path to configuration file |
