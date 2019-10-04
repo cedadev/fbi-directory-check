@@ -297,7 +297,7 @@ class ElasticsearchConsistencyChecker(object):
         item = q.get()
         logger.info(item)
 
-        if os.path.isdir(item):
+        if os.path.isdir(item) and not os.path.islink(item):
 
             # Get list of files and directories
             listing = [os.path.join(item, file) for file in os.listdir(item)]
@@ -355,9 +355,7 @@ class ElasticsearchConsistencyChecker(object):
 
         for root, dirs, _ in os.walk(path):
             abs_root = os.path.abspath(root)
-
-            for dir in dirs:
-                self.bot_queue.put(os.path.join(abs_root, dir))
+            self.bot_queue.put(abs_root)
 
     def consume(self, dev=False):
         """
