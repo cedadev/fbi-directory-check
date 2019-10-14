@@ -159,10 +159,19 @@ class ElasticsearchConsistencyChecker(object):
         :param action: Action constant
         :return: string which matches deposit log format
         """
+
+        # Add file size if depositing
         time = datetime.now().isoformat(sep='-')
-        size = os.path.getsize(path)
+
+        # This will fail if this is a remove action
+        try:
+            size = os.path.getsize(path)
+        except FileNotFoundError:
+            size=''
 
         return '{}:{}:{}:{}:'.format(time, path, action.upper(), size)
+
+
 
     def publish_message(self, msg):
         self.channel.basic_publish(
