@@ -14,6 +14,7 @@ from six.moves.configparser import RawConfigParser
 from datetime import datetime
 from fbi_directory_check.utils.constants import DEPOSIT, MKDIR, README
 import pika
+from fbi_directory_check.utils import walk_storage_links
 
 
 class RabbitMQConnection(object):
@@ -116,7 +117,7 @@ def main():
     # If -r flag, walk the tree
     if args.recursive:
 
-        for root, dirs, files in os.walk(abs_root):
+        for root, dirs, files in walk_storage_links(abs_root):
 
             # Add directories
             for _dir in dirs:
