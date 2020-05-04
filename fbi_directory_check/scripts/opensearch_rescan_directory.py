@@ -79,7 +79,7 @@ class RabbitMQConnection(object):
 def get_args():
     parser = argparse.ArgumentParser(description='Submit items to be re-scanned for opensearch.')
 
-    parser.add_argument('item', help='Directory or file to add to scan', type=str)
+    parser.add_argument('dir', help='Directory to add to scan', type=str)
     parser.add_argument('-r', dest='recursive', action='store_true',
                         help='Recursive scan. Will include all subdirectories.')
     parser.add_argument('-t', '--tag-only', dest='tag', action='store_true',
@@ -96,14 +96,8 @@ def main():
 
     output_files = []
 
-    if not os.path.exists(args.item):
-        raise OSError(f'{ars.item} is not accessible')
-
-    # Check if the provided object is a file or dir
-    if os.path.isdir(args.item):
-        type = 'DIR'
-    else:
-        type = 'FILE'
+    if not os.path.exists(args.dir):
+        raise OSError(f'{ars.dir} is not accessible')
 
     # Check for tags only flag
     if args.tag:
@@ -112,7 +106,7 @@ def main():
         routing_key=''
 
     # Get the full path
-    abs_root = os.path.abspath(args.item)
+    abs_root = os.path.abspath(args.dir)
 
     if type == 'FILE':
         output_files.append(abs_root)
