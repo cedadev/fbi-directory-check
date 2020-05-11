@@ -23,7 +23,7 @@ with open("README.md") as readme_file:
 
 setup(
     name='fbi_directory_check',
-    version=1.1.2,
+    version=1.2.0,
     description='Submits directories to be checked against the elasticsearch indices',
     author='Richard Smith',
     author_email='richard.d.smith@stfc.ac.uk',
@@ -82,7 +82,8 @@ setup(
         'console_scripts': [
             'fbi_directory_check = fbi_directory_check.scripts.submit_directories:main',
             'fbi_q_check = fbi_directory_check.scripts.q_monitor:main',
-            'fbi_rescan_dir = fbi_directory_check.scripts.rescan_directory:main'
+            'fbi_rescan_dir = fbi_directory_check.scripts.rescan_directory:main',
+            'opensearch_rescan_dir = fbi_directory_check.scripts.opensearch_rescan_directory:main'
         ],
     }
 )

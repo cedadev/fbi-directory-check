@@ -15,6 +15,7 @@ from datetime import datetime
 from fbi_directory_check.utils.constants import DEPOSIT
 from fbi_directory_check.utils import walk_storage_links
 import os
+import json
 
 
 class RabbitMQConnection(object):
@@ -61,13 +62,13 @@ class RabbitMQConnection(object):
         """
         time = datetime.now().isoformat(sep='-')
 
-        return {
+        return json.dumps({
             'datetime': time,
             'filepath': path,
             'action': action.upper(),
             'filesize': 0,
             'message': ''
-        }
+        })
 
     def publish_message(self, msg, routing_key=''):
         self.channel.basic_publish(
@@ -78,6 +79,8 @@ class RabbitMQConnection(object):
 
 
 def get_args():
+    default_config = os.path.join(os.path.dirname(__file__), '../conf/opensearch_updater.ini')
+
     parser = argparse.ArgumentParser(description='Submit items to be re-scanned for opensearch.')
 
     parser.add_argument('dir', help='Directory to add to scan', type=str)
@@ -86,7 +89,7 @@ def get_args():
     parser.add_argument('-t', '--tag-only', dest='tag', action='store_true',
                         help='Add this flag to only send to tag queue. '
                              'Use this if the files are present but need to rescan for opensearch tags.')
-    parser.add_argument('--conf', help='Path to configuration file')
+    parser.add_argument('--conf', help='Optional path to configuration file', default=default_config)
 
     return parser.parse_args()
 
