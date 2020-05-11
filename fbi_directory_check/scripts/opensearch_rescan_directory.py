@@ -108,23 +108,21 @@ def main():
     # Get the full path
     abs_root = os.path.abspath(args.dir)
 
-    if type == 'FILE':
-        output_files.append(abs_root)
+    if args.recursive():
+        for root, dirs, files in walk_storage_links(abs_root):
+
+            for file in files:
+                output_files.append(os.path.join(root, file))
 
     else:
-        if args.recursive():
-            for root, dirs, files in walk_storage_links(abs_root):
+        for item in os.listdir(abs_root):
+            item = os.path.join(abs_root, item)
 
-                for file in files:
-                    output_files.append(os.path.join(root, file))
+            if os.path.isfile(item):
+                output_files.append(item)
 
-        else:
-            for item in os.listdir(abs_root):
-                item = os.path.join(abs_root, item)
-
-                if os.path.isfile(item):
-                    output_files.append(item)
-
+    print(f'Found {len(output_files)} files to submit')
+    print('Submitting...')
     # Submit items to rabbit queue for processing
     rabbit_connection = RabbitMQConnection(args.conf)
 
