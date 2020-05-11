@@ -23,7 +23,7 @@ with open("README.md") as readme_file:
 
 setup(
     name='fbi_directory_check',
-    version=1.2.0,
+    version='1.2.0',
     description='Submits directories to be checked against the elasticsearch indices',
     author='Richard Smith',
     author_email='richard.d.smith@stfc.ac.uk',
