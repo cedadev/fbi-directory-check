@@ -130,3 +130,6 @@ def main():
         msg = rabbit_connection.create_message(file, DEPOSIT)
         rabbit_connection.publish_message(msg, routing_key=routing_key)
 
+
+if __name__ == '__main__':
+    main()
