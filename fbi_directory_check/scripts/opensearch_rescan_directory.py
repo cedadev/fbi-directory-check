@@ -109,7 +109,7 @@ def main():
     # Get the full path
     abs_root = os.path.abspath(args.dir)
 
-    if args.recursive():
+    if args.recursive:
         for root, dirs, files in walk_storage_links(abs_root):
 
             for file in files:
