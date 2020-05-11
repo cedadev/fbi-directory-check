@@ -14,6 +14,7 @@ from configparser import RawConfigParser
 from datetime import datetime
 from fbi_directory_check.utils.constants import DEPOSIT
 from fbi_directory_check.utils import walk_storage_links
+import os
 
 
 class RabbitMQConnection(object):
