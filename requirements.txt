@@ -1,4 +1,5 @@
 certifi==2019.6.16
+git+https://github.com/cedadev/ceda-elasticsearch-tools
 chardet==3.0.4
 elasticsearch==7.0.2
 idna==2.8

@@ -101,7 +101,7 @@ def main():
     output_files = []
 
     if not os.path.exists(args.dir):
-        raise OSError(f'{ars.dir} is not accessible')
+        raise OSError(f'{args.dir} is not accessible')
 
     # Check for tags only flag
     if args.tag:

@@ -44,6 +44,10 @@ setup(
         'pika',
         'elasticsearch',
         'requests'
+        'ceda-elasticsearch-tools'
+    ],
+    dependency_links=[
+        'git+https://github.com/cedadev/ceda-elasticsearch-tools#egg=ceda-elasticsearch-tools'
     ],
 
     # This qualifier can be used to selectively exclude Python versions -
