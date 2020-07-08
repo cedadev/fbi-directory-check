@@ -116,7 +116,10 @@ def main():
         for root, dirs, files in walk_storage_links(abs_root):
 
             for file in files:
-                output_files.append(os.path.join(root, file))
+
+                # Ignore hidden files
+                if not os.path.basename(file).startswith('.'):
+                    output_files.append(os.path.join(root, file))
 
     else:
         for item in os.listdir(abs_root):
