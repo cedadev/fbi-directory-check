@@ -26,11 +26,14 @@ def get_line_in_file(filepath, index):
 
         return line
 
-def walk_storage_links(path):
+
+def walk_storage_links(path: str, depth: int = 0, max_depth: int = None):
     """
     Used within the archive to follow links to storage pots but ignore links which are
     back within the archive and could be circular.
     :param path:
+    :param depth:
+    :param max_depth:
     :return:
     """
     top = os.fspath(path)
@@ -46,6 +49,10 @@ def walk_storage_links(path):
         scandir_it = os.scandir(top)
     except OSError:
         return
+
+    if max_depth:
+        if depth >= max_depth:
+            return
 
     with scandir_it:
         while True:
@@ -74,6 +81,7 @@ def walk_storage_links(path):
     # Yield before recursion when going top down
     yield top, dirs, nondirs
 
+    depth += 1
     # Recurse into sub-directories
     islink, join = os.path.islink, os.path.join
     for dirname in dirs:
@@ -81,6 +89,6 @@ def walk_storage_links(path):
         if islink(new_path):
             # Only follow links to storage locations
             if os.readlink(new_path).startswith('/datacentre'):
-                yield from walk_storage_links(new_path)
+                yield from walk_storage_links(new_path, depth, max_depth)
         # If the path is not a link, recurse
-        yield from walk_storage_links(new_path)
+        yield from walk_storage_links(new_path, depth, max_depth)
