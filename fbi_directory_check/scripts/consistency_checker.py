@@ -15,7 +15,7 @@ import os
 from fbi_directory_check.utils import get_line_in_file
 import requests
 import logging
-from elasticsearch import Elasticsearch
+from ceda_elasticsearch_tools.elasticsearch import CEDAElasticsearchClient
 from elasticsearch.helpers import scan
 import argparse
 from os.path import normpath
@@ -57,7 +57,7 @@ class ElasticsearchConsistencyChecker(object):
         )
 
         # Create Elasticsearch connection
-        self.es = Elasticsearch([self.conf.get('elasticsearch', 'es-host')], timeout=60, retry_on_timeout=True)
+        self.es = CEDAElasticsearchClient(timeout=60, retry_on_timeout=True)
         self.rabbit_connect()
 
         self.spot_progress = self._get_spot_progress()
