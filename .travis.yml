@@ -1,0 +1,13 @@
+language: python
+python:
+  - 3.5
+  - 3.6
+  - 3.7
+
+jobs:
+  include:
+    - stage: test
+      before_script:
+        - pip install -r $TRAVIS_BUILD_DIR/test_requirements.txt
+        - pip install $TRAVIS_BUILD_DIR/.
+      script: python -m unittest fbi_directory_check.tests.test_utils
