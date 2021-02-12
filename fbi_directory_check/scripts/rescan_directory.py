@@ -95,7 +95,11 @@ def valid_path(path):
     :param path:
     :return: boolean
     """
-    return bool(os.path.exists(path) and os.path.isdir(path))
+    if not bool(os.path.exists(path) and os.path.isdir(path)):
+        raise OSError('{} is not a directory'.format(path))
+
+    if path == '/':
+        raise  Exception('Cannot scan from root')
 
 
 def main():
@@ -105,8 +109,8 @@ def main():
     output_files = []
     output_directories = []
 
-    if not valid_path(args.dir):
-        raise OSError('{} is not a directory'.format(args.dir))
+    # Check path is valid
+    valid_path(args.dir)
 
     # Get the full path
     abs_root = os.path.abspath(args.dir)
