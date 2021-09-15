@@ -43,8 +43,8 @@ setup(
         'six',
         'pika',
         'elasticsearch',
-        'requests'
-        'ceda-elasticsearch-tools'
+        'requests',
+        'ceda-elasticsearch-tools',
     ],
     dependency_links=[
         'git+https://github.com/cedadev/ceda-elasticsearch-tools#egg=ceda-elasticsearch-tools'
