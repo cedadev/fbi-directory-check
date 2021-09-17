@@ -112,31 +112,28 @@ def main():
     # Get the full path
     abs_root = os.path.abspath(args.dir)
 
-    if args.recursive:
-        for root, dirs, files in walk_storage_links(abs_root):
-
-            for file in files:
-
-                # Ignore hidden files
-                if not os.path.basename(file).startswith('.'):
-                    output_files.append(os.path.join(root, file))
-
-    else:
-        for item in os.listdir(abs_root):
-            item = os.path.join(abs_root, item)
-
-            if os.path.isfile(item):
-                output_files.append(item)
-
-    print(f'Found {len(output_files)} files to submit')
-    print('Submitting...')
     # Submit items to rabbit queue for processing
     rabbit_connection = RabbitMQConnection(args.conf)
 
-    for file in output_files:
-        msg = rabbit_connection.create_message(file, DEPOSIT)
-        rabbit_connection.publish_message(msg, routing_key=routing_key)
+    # If -r flag, walk the whole tree, if not walk only the immediate directory
+    if args.recursive:
+        max_depth = None
+    else:
+        max_depth = 1
 
+    file_count = 0
+
+    for root, dirs, files in walk_storage_links(abs_root, max_depth=max_depth):
+        for file in files:
+            # Ignore hidden files
+            if not os.path.basename(file).startswith('.'):
+                # Submit items to rabbit queue for processing during recursion
+                msg = rabbit_connection.create_message(os.path.join(root, file), DEPOSIT)
+                rabbit_connection.publish_message(msg)
+                
+                file_count += 1
+
+    print(f'Found and submitted {file_count} files.')
 
 if __name__ == '__main__':
     main()

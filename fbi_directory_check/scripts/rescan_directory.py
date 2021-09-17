@@ -115,51 +115,36 @@ def main():
     # Get the full path
     abs_root = os.path.abspath(args.dir)
 
-    # Add the root directory
-    output_directories.append(abs_root)
-
-    # If -r flag, walk the tree
-    if args.recursive:
-
-        for root, dirs, files in walk_storage_links(abs_root):
-
-            # Add directories
-            for _dir in dirs:
-                output_directories.append(os.path.join(root, _dir))
-
-            # Add files
-            for file in files:
-                output_files.append(os.path.join(root, file))
-
-    # Just add the contents of the specified directory
-    else:
-        for item in os.listdir(abs_root):
-
-            item = os.path.join(abs_root, item)
-
-            if os.path.isdir(item):
-                output_directories.append(os.path.join(abs_root, item))
-
-            elif os.path.isfile(item):
-                output_files.append(os.path.join(abs_root, item))
-
     # Submit items to rabbit queue for re-scan
     rabbit_connection = RabbitMQConnection(args.conf)
 
-    if not args.nodirs:
-        for directory in output_directories:
-            msg = rabbit_connection.create_message(directory, MKDIR)
-            rabbit_connection.publish_message(msg)
+    # Add the root directory
+    msg = rabbit_connection.create_message(abs_root, MKDIR)
+    rabbit_connection.publish_message(msg)
 
-    if not args.nofiles:
-        for file in output_files:
-            msg = rabbit_connection.create_message(file, DEPOSIT)
-            rabbit_connection.publish_message(msg)
+    # If -r flag, walk the whole tree, if not walk only the immediate directory
+    if args.recursive:
+        max_depth = None
+    else:
+        max_depth = 1
 
-            if os.path.basename(file) == README:
-                msg = rabbit_connection.create_message(file, README)
+    for root, dirs, files in walk_storage_links(abs_root, max_depth=max_depth):
+
+        # Add directories
+        if not args.nodirs:
+            for _dir in dirs:
+                msg = rabbit_connection.create_message(os.path.join(root, _dir), MKDIR)
                 rabbit_connection.publish_message(msg)
 
+        # Add files
+        if not args.nofiles:
+            for file in files:
+                msg = rabbit_connection.create_message(os.path.join(root, file), DEPOSIT)
+                rabbit_connection.publish_message(msg)
+
+                if os.path.basename(file) == README:
+                    msg = rabbit_connection.create_message(os.path.join(root, file), README)
+                    rabbit_connection.publish_message(msg)
 
 if __name__ == '__main__':
     main()
