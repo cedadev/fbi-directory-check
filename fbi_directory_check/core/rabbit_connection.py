@@ -9,6 +9,10 @@ __license__ = 'BSD - see LICENSE file in top-level package directory'
 __contact__ = 'richard.d.smith@stfc.ac.uk'
 
 from fbi_directory_check.utils.constants import DepositAction
+from configparser import RawConfigParser
+import pika
+from datetime import datetime
+import json
 
 
 class RabbitMQConnection(object):
@@ -38,7 +42,7 @@ class RabbitMQConnection(object):
         channel = connection.channel()
 
         # Declare relevant exchanges
-        exchange_type = self.conf.get('server', 'exhange_type', 'fanout')
+        exchange_type = self.conf.get('server', 'exchange_type', fallback='fanout')
 
         channel.exchange_declare(exchange=self.exchange, exchange_type=exchange_type)
 
@@ -66,7 +70,7 @@ class RabbitMQConnection(object):
 
     def publish_message(self, msg: str, routing_key='') -> None:
         self.channel.basic_publish(
-            exchange=self.fbi_exchange,
+            exchange=self.exchange,
             routing_key=routing_key,
             body=msg
         )

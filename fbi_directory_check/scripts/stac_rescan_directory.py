@@ -10,8 +10,9 @@ __contact__ = 'richard.d.smith@stfc.ac.uk'
 
 from fbi_directory_check.core.rabbit_connection import RabbitMQConnection
 from fbi_directory_check.utils.constants import DepositAction
-from fbi_directory_check.utils import valid_path
+from fbi_directory_check.utils import walk_storage_links, valid_path
 
+import argparse
 import os
 
 
