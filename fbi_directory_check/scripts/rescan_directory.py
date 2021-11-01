@@ -74,7 +74,7 @@ def main():
                 msg = rabbit_connection.create_message(os.path.join(root, file), DepositAction.DEPOSIT)
                 rabbit_connection.publish_message(msg)
 
-                if os.path.basename(file) == README:
+                if os.path.basename(file) == DepositAction.README:
                     msg = rabbit_connection.create_message(os.path.join(root, file), DepositAction.README)
                     rabbit_connection.publish_message(msg)
 
