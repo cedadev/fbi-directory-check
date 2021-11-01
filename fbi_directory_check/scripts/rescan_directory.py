@@ -51,7 +51,7 @@ def main():
     rabbit_connection = RabbitMQConnection(args.conf)
 
     # Add the root directory
-    msg = rabbit_connection.create_message(abs_root, MKDIR)
+    msg = rabbit_connection.create_message(abs_root, DepositAction.MKDIR)
     rabbit_connection.publish_message(msg)
 
     # If -r flag, walk the whole tree, if not walk only the immediate directory
