@@ -90,5 +90,6 @@ def walk_storage_links(path: str, depth: int = 0, max_depth: int = None):
             # Only follow links to storage locations
             if os.readlink(new_path).startswith('/datacentre'):
                 yield from walk_storage_links(new_path, depth, max_depth)
-        # If the path is not a link, recurse
-        yield from walk_storage_links(new_path, depth, max_depth)
+        else:
+            # If the path is not a link, recurse
+            yield from walk_storage_links(new_path, depth, max_depth)
