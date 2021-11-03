@@ -15,6 +15,9 @@ from datetime import datetime
 from fbi_directory_check.utils.constants import DEPOSIT, MKDIR, README, SYMLINK
 import pika
 from fbi_directory_check.utils import walk_storage_links
+import logging
+
+LOGGER = logging.getLogger(__name__)
 
 
 class RabbitMQConnection(object):
@@ -125,6 +128,7 @@ def main():
     if args.dryrun:
         print(msg)
     else:
+        LOGGER.debug(f'Publishing: {msg}')
         rabbit_connection.publish_message(msg)
 
     # If -r flag, walk the whole tree, if not walk only the immediate directory
@@ -148,6 +152,7 @@ def main():
                 if args.dryrun:
                     print(msg)
                 else:
+                    LOGGER.debug(f'Publishing: {msg}')
                     rabbit_connection.publish_message(msg)
 
         # Add files
@@ -164,6 +169,7 @@ def main():
                 if args.dryrun:
                     print(msg)
                 else:
+                    LOGGER.debug(f'Publishing: {msg}')
                     rabbit_connection.publish_message(msg)
 
                 if os.path.basename(file) == README:
@@ -172,6 +178,7 @@ def main():
                     if args.dryrun:
                         print(msg)
                     else:
+                        LOGGER.debug(f'Publishing: {msg}')
                         rabbit_connection.publish_message(msg)
 
 
