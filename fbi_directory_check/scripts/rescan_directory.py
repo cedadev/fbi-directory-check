@@ -138,7 +138,12 @@ def main():
         # Add directories
         if not args.nodirs:
             for _dir in dirs:
-                msg = rabbit_connection.create_message(os.path.join(root, _dir), MKDIR)
+                path = os.path.join(root, _dir)
+
+                if os.path.islink(path):
+                    msg = rabbit_connection.create_message(path, SYMLINK)
+                else:
+                    msg = rabbit_connection.create_message(path, MKDIR)
 
                 if args.dryrun:
                     print(msg)
@@ -151,10 +156,10 @@ def main():
                 path = os.path.join(root, file)
 
                 # Create symlink message for file links
-                if not os.path.islink(path):
-                    msg = rabbit_connection.create_message(path, DEPOSIT)
-                else:
+                if os.path.islink(path):
                     msg = rabbit_connection.create_message(path, SYMLINK)
+                else:
+                    msg = rabbit_connection.create_message(path, DEPOSIT)
 
                 if args.dryrun:
                     print(msg)
