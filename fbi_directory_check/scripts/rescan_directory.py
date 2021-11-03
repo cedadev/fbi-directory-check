@@ -12,7 +12,7 @@ import os
 import argparse
 from six.moves.configparser import RawConfigParser
 from datetime import datetime
-from fbi_directory_check.utils.constants import DEPOSIT, MKDIR, README
+from fbi_directory_check.utils.constants import DEPOSIT, MKDIR, README, SYMLINK
 import pika
 from fbi_directory_check.utils import walk_storage_links
 
@@ -139,12 +139,20 @@ def main():
         # Add files
         if not args.nofiles:
             for file in files:
-                msg = rabbit_connection.create_message(os.path.join(root, file), DEPOSIT)
+                path = os.path.join(root, file)
+
+                # Push symlink message for file links
+                if not os.path.islink(path):
+                    msg = rabbit_connection.create_message(path, DEPOSIT)
+                else:
+                    msg = rabbit_connection.create_message(path, SYMLINK)
+
                 rabbit_connection.publish_message(msg)
 
                 if os.path.basename(file) == README:
-                    msg = rabbit_connection.create_message(os.path.join(root, file), README)
+                    msg = rabbit_connection.create_message(path, README)
                     rabbit_connection.publish_message(msg)
+
 
 if __name__ == '__main__':
     main()
