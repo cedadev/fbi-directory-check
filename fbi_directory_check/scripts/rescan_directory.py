@@ -12,9 +12,12 @@ import os
 import argparse
 from six.moves.configparser import RawConfigParser
 from datetime import datetime
-from fbi_directory_check.utils.constants import DEPOSIT, MKDIR, README
+from fbi_directory_check.utils.constants import DEPOSIT, MKDIR, README, SYMLINK
 import pika
 from fbi_directory_check.utils import walk_storage_links
+import logging
+
+LOGGER = logging.getLogger(__name__)
 
 
 class RabbitMQConnection(object):
@@ -85,6 +88,7 @@ def get_args():
     parser.add_argument('--no-files', dest='nofiles', action='store_true', help='Ignore files')
     parser.add_argument('--no-dirs', dest='nodirs', action='store_true', help='Ignore directories')
     parser.add_argument('--conf', type=str, default=default_config, help='Optional path to configuration file')
+    parser.add_argument('--dry-run', dest='dryrun', action='store_true', help='Display log messages to screen rather than pushing to rabbit')
 
     return parser.parse_args()
 
@@ -120,7 +124,12 @@ def main():
 
     # Add the root directory
     msg = rabbit_connection.create_message(abs_root, MKDIR)
-    rabbit_connection.publish_message(msg)
+
+    if args.dryrun:
+        print(msg)
+    else:
+        LOGGER.debug(f'Publishing: {msg}')
+        rabbit_connection.publish_message(msg)
 
     # If -r flag, walk the whole tree, if not walk only the immediate directory
     if args.recursive:
@@ -133,18 +142,45 @@ def main():
         # Add directories
         if not args.nodirs:
             for _dir in dirs:
-                msg = rabbit_connection.create_message(os.path.join(root, _dir), MKDIR)
-                rabbit_connection.publish_message(msg)
+                path = os.path.join(root, _dir)
+
+                if os.path.islink(path):
+                    msg = rabbit_connection.create_message(path, SYMLINK)
+                else:
+                    msg = rabbit_connection.create_message(path, MKDIR)
+
+                if args.dryrun:
+                    print(msg)
+                else:
+                    LOGGER.debug(f'Publishing: {msg}')
+                    rabbit_connection.publish_message(msg)
 
         # Add files
         if not args.nofiles:
             for file in files:
-                msg = rabbit_connection.create_message(os.path.join(root, file), DEPOSIT)
-                rabbit_connection.publish_message(msg)
+                path = os.path.join(root, file)
+
+                # Create symlink message for file links
+                if os.path.islink(path):
+                    msg = rabbit_connection.create_message(path, SYMLINK)
+                else:
+                    msg = rabbit_connection.create_message(path, DEPOSIT)
+
+                if args.dryrun:
+                    print(msg)
+                else:
+                    LOGGER.debug(f'Publishing: {msg}')
+                    rabbit_connection.publish_message(msg)
 
                 if os.path.basename(file) == README:
-                    msg = rabbit_connection.create_message(os.path.join(root, file), README)
-                    rabbit_connection.publish_message(msg)
+                    msg = rabbit_connection.create_message(path, README)
+
+                    if args.dryrun:
+                        print(msg)
+                    else:
+                        LOGGER.debug(f'Publishing: {msg}')
+                        rabbit_connection.publish_message(msg)
+
 
 if __name__ == '__main__':
     main()
