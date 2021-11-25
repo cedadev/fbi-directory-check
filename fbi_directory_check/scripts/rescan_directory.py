@@ -110,8 +110,8 @@ def main():
 
     args = get_args()
 
-    output_files = []
-    output_directories = []
+    output_files = 0
+    output_directories = 0
 
     # Check path is valid
     valid_path(args.dir)
@@ -142,6 +142,7 @@ def main():
         # Add directories
         if not args.nodirs:
             for _dir in dirs:
+                output_directories += 1
                 path = os.path.join(root, _dir)
 
                 if os.path.islink(path):
@@ -158,6 +159,7 @@ def main():
         # Add files
         if not args.nofiles:
             for file in files:
+                output_files += 1
                 path = os.path.join(root, file)
 
                 # Create symlink message for file links
@@ -180,6 +182,8 @@ def main():
                     else:
                         LOGGER.debug(f'Publishing: {msg}')
                         rabbit_connection.publish_message(msg)
+
+    print(f'Sumbitted {output_directories} directories and {output_files} files')
 
 
 if __name__ == '__main__':
