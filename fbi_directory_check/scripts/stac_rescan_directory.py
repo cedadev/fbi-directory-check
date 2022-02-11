@@ -35,7 +35,8 @@ def main():
     valid_path(args.dir)
 
     # Check for tags only flag
-    routing_key = f'deposit.log.{DepositAction.DEPOSIT.value}'
+    # routing_key = f'deposit.log.{DepositAction.DEPOSIT.value}'
+    routing_key = ''
 
     # Get the full path
     abs_root = os.path.abspath(args.dir)
