@@ -87,7 +87,8 @@ setup(
             'fbi_directory_check = fbi_directory_check.scripts.submit_directories:main',
             'fbi_q_check = fbi_directory_check.scripts.q_monitor:main',
             'fbi_rescan_dir = fbi_directory_check.scripts.rescan_directory:main',
-            'opensearch_rescan_dir = fbi_directory_check.scripts.opensearch_rescan_directory:main'
+            'opensearch_rescan_dir = fbi_directory_check.scripts.opensearch_rescan_directory:main',
+            'stac_rescan_dir = fbi_directory_check.scripts.stac_rescan_directory:main',
         ],
     }
 )

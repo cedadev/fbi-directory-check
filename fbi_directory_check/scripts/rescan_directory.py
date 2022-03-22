@@ -8,69 +8,13 @@ __copyright__ = 'Copyright 2018 United Kingdom Research and Innovation'
 __license__ = 'BSD - see LICENSE file in top-level package directory'
 __contact__ = 'richard.d.smith@stfc.ac.uk'
 
-import os
 import argparse
-from six.moves.configparser import RawConfigParser
-from datetime import datetime
-from fbi_directory_check.utils.constants import DEPOSIT, MKDIR, README, SYMLINK
-import pika
-from fbi_directory_check.utils import walk_storage_links
-import logging
+import os
 
-LOGGER = logging.getLogger(__name__)
+from fbi_directory_check.core.rabbit_connection import RabbitMQConnection
+from fbi_directory_check.utils.constants import DepositAction
+from fbi_directory_check.utils import walk_storage_links, valid_path
 
-
-class RabbitMQConnection(object):
-
-    def __init__(self, config):
-        self.conf = RawConfigParser()
-        self.conf.read(config)
-
-        # Get the username and password for rabbit
-        rabbit_user = self.conf.get('server', 'user')
-        rabbit_password = self.conf.get('server', 'password')
-
-        # Get the fbi exchange
-        self.fbi_exchange = self.conf.get('server','fbi_exchange')
-
-        # Start the rabbitMQ connection
-        connection = pika.BlockingConnection(
-            pika.ConnectionParameters(
-                self.conf.get('server', 'name'),
-                credentials=pika.PlainCredentials(rabbit_user, rabbit_password),
-                virtual_host=self.conf.get('server', 'vhost'),
-                heartbeat=300
-            )
-        )
-
-        # Create a new channel
-        channel = connection.channel()
-
-        # Declare relevant exchanges
-        channel.exchange_declare(exchange=self.fbi_exchange, exchange_type='fanout')
-
-        self.channel = channel
-
-    @staticmethod
-    def create_message(path, action):
-        """
-        Create message to add to rabbit queue. Message matches format of deposit logs.
-        date_time:path:action:size:message
-
-        :param path: Full logical path to file
-        :param action: Action constant
-        :return: string which matches deposit log format
-        """
-        time = datetime.now().isoformat(sep='-')
-
-        return '{}:{}:{}::'.format(time, path, action.upper())
-
-    def publish_message(self, msg):
-        self.channel.basic_publish(
-            exchange=self.fbi_exchange,
-            routing_key='',
-            body=msg
-        )
 
 
 def get_args():
@@ -93,19 +37,6 @@ def get_args():
     return parser.parse_args()
 
 
-def valid_path(path):
-    """
-    Check that we have been given a real directory
-    :param path:
-    :return: boolean
-    """
-    if not bool(os.path.exists(path) and os.path.isdir(path)):
-        raise OSError('{} is not a directory'.format(path))
-
-    if path == '/':
-        raise  Exception('Cannot scan from root')
-
-
 def main():
 
     args = get_args()
@@ -123,7 +54,7 @@ def main():
     rabbit_connection = RabbitMQConnection(args.conf)
 
     # Add the root directory
-    msg = rabbit_connection.create_message(abs_root, MKDIR)
+    msg = rabbit_connection.create_message(abs_root, DepositAction.MKDIR)
 
     if args.dryrun:
         print(msg)
@@ -146,9 +77,9 @@ def main():
                 path = os.path.join(root, _dir)
 
                 if os.path.islink(path):
-                    msg = rabbit_connection.create_message(path, SYMLINK)
+                    msg = rabbit_connection.create_message(path, DepositAction.SYMLINK)
                 else:
-                    msg = rabbit_connection.create_message(path, MKDIR)
+                    msg = rabbit_connection.create_message(path, DepositAction.MKDIR)
 
                 if args.dryrun:
                     print(msg)
@@ -164,9 +95,9 @@ def main():
 
                 # Create symlink message for file links
                 if os.path.islink(path):
-                    msg = rabbit_connection.create_message(path, SYMLINK)
+                    msg = rabbit_connection.create_message(path, DepositAction.SYMLINK)
                 else:
-                    msg = rabbit_connection.create_message(path, DEPOSIT)
+                    msg = rabbit_connection.create_message(path, DepositAction.DEPOSIT)
 
                 if args.dryrun:
                     print(msg)
@@ -174,8 +105,8 @@ def main():
                     LOGGER.debug(f'Publishing: {msg}')
                     rabbit_connection.publish_message(msg)
 
-                if os.path.basename(file) == README:
-                    msg = rabbit_connection.create_message(path, README)
+                if os.path.basename(file) == DepositAction.README:
+                    msg = rabbit_connection.create_message(path, DepositAction.README)
 
                     if args.dryrun:
                         print(msg)

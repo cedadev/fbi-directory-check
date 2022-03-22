@@ -10,6 +10,7 @@ __contact__ = 'richard.d.smith@stfc.ac.uk'
 
 import os
 
+
 def get_line_in_file(filepath, index):
     """
     Given a file path and and line number
@@ -93,3 +94,16 @@ def walk_storage_links(path: str, depth: int = 0, max_depth: int = None):
         else:
             # If the path is not a link, recurse
             yield from walk_storage_links(new_path, depth, max_depth)
+
+
+def valid_path(path):
+    """
+    Check that we have been given a real directory
+    :param path:
+    :return: boolean
+    """
+    if not bool(os.path.exists(path) and os.path.isdir(path)):
+        raise OSError('{} is not a directory'.format(path))
+
+    if path == '/':
+        raise  Exception('Cannot scan from root')
