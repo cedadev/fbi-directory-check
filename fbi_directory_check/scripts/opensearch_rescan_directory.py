@@ -107,7 +107,7 @@ def main():
     if args.tag:
         routing_key='opensearch.tagger.cci'
     else:
-        routing_key='opensearch.rescan.dir'
+        routing_key='elasticsearch_update_queue_opensearch_ingest'
 
     # Get the full path
     abs_root = os.path.abspath(args.dir)
