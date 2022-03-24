@@ -107,7 +107,7 @@ def main():
     if args.tag:
         routing_key='opensearch.tagger.cci'
     else:
-        routing_key=''
+        routing_key='elasticsearch_update_queue_opensearch_ingest'
 
     # Get the full path
     abs_root = os.path.abspath(args.dir)
@@ -129,7 +129,7 @@ def main():
             if not os.path.basename(file).startswith('.'):
                 # Submit items to rabbit queue for processing during recursion
                 msg = rabbit_connection.create_message(os.path.join(root, file), DEPOSIT)
-                rabbit_connection.publish_message(msg)
+                rabbit_connection.publish_message(msg, routing_key=routing_key)
                 
                 file_count += 1
 
