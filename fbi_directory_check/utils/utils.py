@@ -26,6 +26,11 @@ def get_line_in_file(filepath, index):
 
         return line
 
+def environ_or_required(key):
+    return (
+        {'default': os.environ.get(key)} if os.environ.get(key)
+        else {'required': True}
+    )
 
 def walk_storage_links(path: str, depth: int = 0, max_depth: int = None):
     """
