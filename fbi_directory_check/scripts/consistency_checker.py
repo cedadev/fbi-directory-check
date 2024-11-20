@@ -73,6 +73,7 @@ class ElasticsearchConsistencyChecker(object):
         ch.setFormatter(formatter)
 
         logger.addHandler(ch)
+        logger.info("Setup Elasticsearch consistency checker")
 
     def _load_queue_params(self):
 
