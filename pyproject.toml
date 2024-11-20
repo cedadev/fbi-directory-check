@@ -1,0 +1,62 @@
+[tool.poetry]
+name = "fbi-directory-check"
+version = "1.3.0"
+description = "Perform directory rescans to check against the elasticsearch index"
+authors = ["Daniel Westwood <daniel.westwood@stfc.ac.uk>, Rhys Evans <rhys.evans@stfc.ac.uk>"]
+license = "BSD 4 - See License file"
+readme = "README.md"
+
+include = [
+    { path = 'fbi_directory_check/LICENSE' },
+    { path = 'fbi_directory_check/conf/*.ini' }
+]
+
+classifiers = [
+    'Development Status :: 5 - Production/Stable',
+    'Environment :: Console',
+    'Environment :: Web Environment',
+    'Intended Audience :: End Users/Desktop',
+    'Intended Audience :: Developers',
+    'Intended Audience :: System Administrators',
+    'Intended Audience :: Science/Research',
+    'License :: OSI Approved :: BSD License',
+    'Natural Language :: English',
+    'Operating System :: Microsoft :: Windows',
+    'Operating System :: POSIX :: Linux',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3.8',
+    'Topic :: Security',
+    'Topic :: Internet',
+    'Topic :: Scientific/Engineering',
+    'Topic :: System :: Distributed Computing',
+    'Topic :: System :: Systems Administration :: Authentication/Directory',
+    'Topic :: Software Development :: Libraries :: Python Modules'
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+certifi = "^2024.8.30"
+chardet = "^5.2.0"
+elasticsearch = "^7"
+idna = "^3.10"
+requests = "^2.32.3"
+urllib3 = "^2.2.3"
+persist-queue = "^1.0.0"
+pika = "^1.3.2"
+six = "^1.16.0"
+ceda-elasticsearch-tools = { git = "https://github.com/cedadev/ceda-elasticsearch-tools.git", tag = "v2.4.0"}
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+# 
+fbi_directory_check = 'fbi_directory_check.scripts.submit_directories:main'
+#
+fbi_q_check = 'fbi_directory_check.scripts.q_monitor:main'
+#
+fbi_rescan_dir = 'fbi_directory_check.scripts.rescan_directory:main'
+#
+opensearch_rescan_dir = 'fbi_directory_check.scripts.opensearch_rescan_directory:main'
+#

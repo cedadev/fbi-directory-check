@@ -14,13 +14,30 @@ from six.moves.configparser import RawConfigParser
 from datetime import datetime
 from fbi_directory_check.utils.constants import DEPOSIT, MKDIR, README, SYMLINK
 import pika
-from fbi_directory_check.utils import walk_storage_links
+from fbi_directory_check.utils import walk_storage_links, set_verbose
 import logging
+import json
+import re
+import glob
 
-LOGGER = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
-class RabbitMQConnection(object):
+class RabbitMQConnection:
+    """
+    Handles the connection with the RabbitMQ service.
+    Takes a config file as input with the following expected content:
+    
+    server:
+      name:
+      user:
+      password:
+      exchange:
+      exchange_type:
+      vhost:
+    
+    """
 
     def __init__(self, config):
         self.conf = RawConfigParser()
@@ -31,7 +48,7 @@ class RabbitMQConnection(object):
         rabbit_password = self.conf.get('server', 'password')
 
         # Get the fbi exchange
-        self.fbi_exchange = self.conf.get('server','fbi_exchange')
+        self.exchange = self.conf.get('server','exchange')
 
         # Start the rabbitMQ connection
         connection = pika.BlockingConnection(
@@ -47,7 +64,7 @@ class RabbitMQConnection(object):
         channel = connection.channel()
 
         # Declare relevant exchanges
-        channel.exchange_declare(exchange=self.fbi_exchange, exchange_type='fanout')
+        channel.exchange_declare(exchange=self.exchange, exchange_type=self.conf.get('server','exchange_type'))
 
         self.channel = channel
 
@@ -63,128 +80,266 @@ class RabbitMQConnection(object):
         """
         time = datetime.now().isoformat(sep='-')
 
-        return '{}:{}:{}::'.format(time, path, action.upper())
+        return json.dumps({
+            'datetime': time,
+            'filepath': path,
+            'action': action.upper(),
+            'filesize': 0,
+            'message': ''
+        })
 
-    def publish_message(self, msg):
+    def publish_message(self, msg: str, routing_key: str = ''):
         self.channel.basic_publish(
-            exchange=self.fbi_exchange,
-            routing_key='',
+            exchange=self.exchange,
+            routing_key=routing_key,
             body=msg
         )
 
 
-def get_args():
+"""
+def get_dataset_filelist(dataset):
     """
-    Command line arguments
-    :return:
-    """
+    #Query Elasticsearch for the list of files in the changed dataset
+    #:param dataset: path to root of dataset
+    #:return: list of file paths
+"""
 
-    default_config = os.path.join(os.path.dirname(__file__), '../conf/index_updater.ini')
+    query = {
+        "_source": {
+            "includes": ["info.directory", "info.name"]
+        },
+        "query": {
+            "match_phrase_prefix": {
+                "info.directory.analyzed": dataset
+            }
+        }
+    }
 
-    parser = argparse.ArgumentParser(description='Submit directories to be re-scanned.')
-    parser.add_argument('dir', type=str, help='Directory to scan')
-    parser.add_argument('-r', dest='recursive', action='store_true',
-                        help='Recursive. Will include all directories below this point as well')
-    parser.add_argument('--no-files', dest='nofiles', action='store_true', help='Ignore files')
-    parser.add_argument('--no-dirs', dest='nodirs', action='store_true', help='Ignore directories')
-    parser.add_argument('--conf', type=str, default=default_config, help='Optional path to configuration file')
-    parser.add_argument('--dry-run', dest='dryrun', action='store_true', help='Display log messages to screen rather than pushing to rabbit')
+    es = CEDAElasticsearchClient()
+    results = scan(es, query=query, index='opensearch-files')
 
-    return parser.parse_args()
+    file_list = [
+        os.path.join(
+            item['_source']['info']['directory'],
+            item['_source']['info']['name']
+        ) for item in results
+    ]
 
+    return file_list
+"""
 
-def valid_path(path):
+def check_valid_path(path):
     """
     Check that we have been given a real directory
     :param path:
     :return: boolean
     """
+    if path == '/':
+        raise Exception('Cannot scan from root')
+
     if not bool(os.path.exists(path) and os.path.isdir(path)):
         raise OSError('{} is not a directory'.format(path))
+    
+class RescanDirs:
 
-    if path == '/':
-        raise  Exception('Cannot scan from root')
+    def __init__(
+            self, 
+            scan_path: str,
+            scan_level: int = 1,
+            use_rabbit: bool = False,
+            conf: str = '',
+            dryrun: bool = False, 
+            skip_dirs: bool = False,
+            skip_files: bool = False,
+            recursive: bool = False,
+            file_regex: str = None,
+            output: str = None
+        ) -> None:
 
+        if scan_path == '':
+            self._init_from_args()
+            return
+        
+        check_valid_path(scan_path)
+
+        self.scan_path = os.path.abspath(scan_path)
+        self.scan_level = scan_level
+        self.use_rabbit = use_rabbit
+        self.conf = conf
+
+        # Default match any filename not starting with a . dot
+        self.file_regex = file_regex or '^(?![.])'
+
+        self._dryrun = dryrun
+        self._recursive = recursive
+        self._output = output
+
+        self.skip_dirs = skip_dirs
+        self.skip_files = skip_files
+
+        self.routing_key = 'elasticsearch_update_queue_opensearch_ingest'
+
+    @property
+    def max_depth(self):
+        if self._recursive:
+            return None
+        else:
+            return 1
+
+    def _init_from_args(self):
+
+        default_config = os.path.join(os.path.dirname(__file__), '../conf/rabbit_updater.ini')
+
+        parser = argparse.ArgumentParser(description='Submit directories/items to be re-scanned.')
+        parser.add_argument('dir', type=str, help='Directory to scan')
+        parser.add_argument('-r', dest='recursive', action='store_true',
+                            help='Recursive. Will include all directories below this point as well')
+
+        parser.add_argument('-l','--scan-level',type=int, dest='scan_level',
+                            help='Level of depth for scanning (1,2,3)')
+        parser.add_argument('-R','--use-rabbit',dest='use_rabbit',
+                            help='Deposit to rabbit queues or return list of paths')
+        
+        #parser.add_argument('--no-files', dest='nofiles', action='store_true', help='Ignore files')
+        
+        # Removed the ability to publish whole directories
+        #parser.add_argument('--no-dirs', dest='nodirs', action='store_true', help='Ignore directories')
+        parser.add_argument('--conf', type=str, default=default_config, help='Optional path to configuration file')
+        parser.add_argument('--dry-run', dest='dryrun', action='store_true', help='Display log messages to screen rather than pushing to rabbit')
+
+        parser.add_argument('-o','--output',dest='output', help='Store output list in a file.')
+        parser.add_argument('-v','--verbose',action='count',dest='verbose',help='Verbose output')
+
+        parser.add_argument('--file-regex', dest='file_regex', 
+                            help='Matching file regex, by default regex applies to all files not starting with "."')
+        args = parser.parse_args()
+
+        set_verbose(args.verbose)
+
+        self.__init__(
+            args.dir,
+            scan_level=args.scan_level,
+            use_rabbit=args.use_rabbit,
+            conf=args.conf,
+            dryrun=args.dryrun,
+            recursive=args.recursive,
+            file_regex=args.file_regex,
+            output=args.output
+        )
+
+    def _setup_rabbit(self):
+
+        if not self.conf:
+            raise ValueError(
+                'A configuration file (--conf) must be supplied when using rabbit'
+            )
+
+        self.rabbit_connection = RabbitMQConnection(self.conf)
+
+    def _submit_to_rabbit(self, item: str, itype = 'DEPOSIT') -> None:
+        """
+        Perform all operations for a specific file.
+        All checks in relation to filepath should be checked
+        before this stage.
+        """
+        logger.info(f'Depositing {item} to Rabbit')
+
+        msg = self.rabbit_connection.create_message(item, itype) #Deposit
+        self.rabbit_connection.publish_message(msg, routing_key=self.routing_key) #'opensearch.tagger.cci')
+
+    def _determine_paths(self):
+        """
+        Three scan levels:
+         - just latest json dataset directories
+         - all json dataset directories
+         - all known directories
+        """
+
+        scan_files = []
+
+        if self.scan_level == 3: # All files under a directory
+            logger.info('Scanning directories')
+            for root, dirs, files in walk_storage_links(self.scan_path, max_depth=self.max_depth):
+                for file in files:
+                    if not re.match(self.file_regex, file):
+                        continue
+
+                    scan_files.append(f'{root}/{file}')
+
+        else:
+            # Pull files from json
+            scanpath = f'{os.path.abspath(self.scan_path)}/*'
+            if self.scan_level == 1:
+                logger.info('Attempting to get changed/new json files.')
+                try:
+                    jsons = get_changed_files()
+                except:
+                    jsons = glob.glob(scanpath)
+            else:
+                jsons = glob.glob(scanpath)
+
+            for file in jsons:
+                logger.info(f'Extracting from {file}')
+
+                # Only want to track the changes in the JSON directory
+                if file.endswith('.json'):
+                    with open(file) as reader:
+                        data = json.load(reader)
+                    scan_files += data['datasets']
+
+        return scan_files
+
+    def scan(self) -> list:
+        output_files = 0
+
+        if self.use_rabbit:
+            self._setup_rabbit()
+
+        deposit_paths = []
+
+        for path in self._determine_paths():
+            # Note the mkdir and symlink messages are no longer
+            # required as all files have been ingested separately.
+
+            output_files += 1
+
+            # Create symlink message for file links
+            if os.path.islink(path):
+                action = SYMLINK
+            else:
+                action = DEPOSIT
+
+            if self._dryrun:
+                print(path, action)
+                continue
+
+            if self.use_rabbit:
+                self._submit_to_rabbit(path, itype=action)
+            else:
+                # Do something with the paths here.
+                deposit_paths.append(path)
+
+        logger.info(f'Submitted {output_files} files')
+        return deposit_paths
+
+    def save_data(self, outdata):
+
+        if self._output is None:
+            for line in outdata:
+                print(line)
+            return
+        
+        with open(self._output,'w') as f:
+            f.write('\n'.join(outdata))
 
 def main():
-
-    args = get_args()
-
-    output_files = 0
-    output_directories = 0
-
-    # Check path is valid
-    valid_path(args.dir)
-
-    # Get the full path
-    abs_root = os.path.abspath(args.dir)
-
-    # Submit items to rabbit queue for re-scan
-    rabbit_connection = RabbitMQConnection(args.conf)
-
-    # Add the root directory
-    msg = rabbit_connection.create_message(abs_root, MKDIR)
-
-    if args.dryrun:
-        print(msg)
+    r = RescanDirs('')
+    if not r.use_rabbit:
+        r.save_data(r.scan())
     else:
-        LOGGER.debug(f'Publishing: {msg}')
-        rabbit_connection.publish_message(msg)
-
-    # If -r flag, walk the whole tree, if not walk only the immediate directory
-    if args.recursive:
-        max_depth = None
-    else:
-        max_depth = 1
-
-    for root, dirs, files in walk_storage_links(abs_root, max_depth=max_depth):
-
-        # Add directories
-        if not args.nodirs:
-            for _dir in dirs:
-                output_directories += 1
-                path = os.path.join(root, _dir)
-
-                if os.path.islink(path):
-                    msg = rabbit_connection.create_message(path, SYMLINK)
-                else:
-                    msg = rabbit_connection.create_message(path, MKDIR)
-
-                if args.dryrun:
-                    print(msg)
-                else:
-                    LOGGER.debug(f'Publishing: {msg}')
-                    rabbit_connection.publish_message(msg)
-
-        # Add files
-        if not args.nofiles:
-            for file in files:
-                output_files += 1
-                path = os.path.join(root, file)
-
-                # Create symlink message for file links
-                if os.path.islink(path):
-                    msg = rabbit_connection.create_message(path, SYMLINK)
-                else:
-                    msg = rabbit_connection.create_message(path, DEPOSIT)
-
-                if args.dryrun:
-                    print(msg)
-                else:
-                    LOGGER.debug(f'Publishing: {msg}')
-                    rabbit_connection.publish_message(msg)
-
-                if os.path.basename(file) == README:
-                    msg = rabbit_connection.create_message(path, README)
-
-                    if args.dryrun:
-                        print(msg)
-                    else:
-                        LOGGER.debug(f'Publishing: {msg}')
-                        rabbit_connection.publish_message(msg)
-
-    print(f'Sumbitted {output_directories} directories and {output_files} files')
-
+        _ = r.scan()
 
 if __name__ == '__main__':
     main()
+    
+
