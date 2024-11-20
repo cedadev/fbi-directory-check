@@ -9,6 +9,28 @@ __license__ = 'BSD - see LICENSE file in top-level package directory'
 __contact__ = 'richard.d.smith@stfc.ac.uk'
 
 import os
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+def set_verbose(level: int):
+    """
+    Reset the logger basic config.
+    """
+
+    levels = [
+        logging.WARN,
+        logging.INFO,
+        logging.DEBUG,
+    ]
+
+    if level >= len(levels):
+        level = len(levels) - 1
+
+    for name in logging.root.manager.loggerDict:
+        lg = logging.getLogger(name)
+        lg.setLevel(levels[level])
 
 def get_line_in_file(filepath, index):
     """
@@ -67,8 +89,7 @@ def walk_storage_links(path: str, depth: int = 0, max_depth: int = None):
                 except StopIteration:
                     break
             except OSError as error:
-                if onerror is not None:
-                    onerror(error)
+                logger.error(error)
                 return
 
             try:

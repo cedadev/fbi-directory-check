@@ -14,7 +14,7 @@ from six.moves.configparser import RawConfigParser
 from datetime import datetime
 from fbi_directory_check.utils.constants import DEPOSIT, MKDIR, README, SYMLINK
 import pika
-from fbi_directory_check.utils import walk_storage_links
+from fbi_directory_check.utils import walk_storage_links, set_verbose
 import logging
 import json
 import re
@@ -95,25 +95,6 @@ class RabbitMQConnection:
             body=msg
         )
 
-
-def get_args():
-    """
-    Command line arguments
-    :return:
-    """
-
-    default_config = os.path.join(os.path.dirname(__file__), '../conf/index_updater.ini')
-
-    parser = argparse.ArgumentParser(description='Submit directories to be re-scanned.')
-    parser.add_argument('dir', type=str, help='Directory to scan')
-    parser.add_argument('-r', dest='recursive', action='store_true',
-                        help='Recursive. Will include all directories below this point as well')
-    parser.add_argument('--no-files', dest='nofiles', action='store_true', help='Ignore files')
-    parser.add_argument('--no-dirs', dest='nodirs', action='store_true', help='Ignore directories')
-    parser.add_argument('--conf', type=str, default=default_config, help='Optional path to configuration file')
-    parser.add_argument('--dry-run', dest='dryrun', action='store_true', help='Display log messages to screen rather than pushing to rabbit')
-
-    return parser.parse_args()
 
 """
 def get_dataset_filelist(dataset):
@@ -227,10 +208,13 @@ class RescanDirs:
         parser.add_argument('--dry-run', dest='dryrun', action='store_true', help='Display log messages to screen rather than pushing to rabbit')
 
         parser.add_argument('-o','--output',dest='output', help='Store output list in a file.')
+        parser.add_argument('-v','--verbose',action='count',dest='verbose',help='Verbose output')
 
         parser.add_argument('--file-regex', dest='file_regex', 
                             help='Matching file regex, by default regex applies to all files not starting with "."')
         args = parser.parse_args()
+
+        set_verbose(args.verbose)
 
         self.__init__(
             args.dir,
@@ -271,10 +255,6 @@ class RescanDirs:
          - all known directories
         """
 
-        # Scan level
-        # scan directory/json directory
-        # Regex name pattern
-
         scan_files = []
 
         if self.scan_level == 3: # All files under a directory
@@ -290,7 +270,11 @@ class RescanDirs:
             # Pull files from json
             scanpath = f'{os.path.abspath(self.scan_path)}/*'
             if self.scan_level == 1:
-                jsons = None#get_changed_files()
+                logger.info('Attempting to get changed/new json files.')
+                try:
+                    jsons = get_changed_files()
+                except:
+                    jsons = glob.glob(scanpath)
             else:
                 jsons = glob.glob(scanpath)
 
