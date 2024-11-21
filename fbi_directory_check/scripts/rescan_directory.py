@@ -271,6 +271,7 @@ class RescanDirs:
 
         else:
             # Pull files from json
+            logger.info(f'Scanning JSON directory: {self.scan_path}')
             scanpath = f'{os.path.abspath(self.scan_path)}/**/*'
             jsons = glob.glob(scanpath)
 
