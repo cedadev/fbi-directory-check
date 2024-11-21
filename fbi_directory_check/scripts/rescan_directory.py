@@ -343,11 +343,11 @@ def main():
     if check_timeout():
         return
 
-        r = RescanDirs('')
-        if not r.use_rabbit:
-            r.save_data(r.scan())
-        else:
-            _ = r.scan()
+    r = RescanDirs('')
+    if not r.use_rabbit:
+        r.save_data(r.scan())
+    else:
+        _ = r.scan()
 
 if __name__ == '__main__':
     main()
