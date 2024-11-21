@@ -134,24 +134,23 @@ def check_timeout():
         except OSError as e:
             if not pathlib_ignore_error(e):
                 raise
-            return False
+            return ''
         except ValueError:
             # Non-encodable path
-            return False
+            return ''
         return True
 
     async def listfile():
         async with asyncio.timeout(10):
             await path_exists('/neodc/esacci/esacci_terms_and_conditions.txt')
-            return True
-
     try:
         status = asyncio.run(listfile())
     except TimeoutError:
         logger.error('TIMEOUT: ESACCI Directories inaccessible')
         return True
 
-    if not status:
+    # If we didn't get a timeout error, can now perform a standard check.
+    if not os.path.isfile('/neodc/esacci/esacci_terms_and_conditions.txt'):
         logger.error('INACCESSIBLE: ESACCI Directories inaccessible')
         return True
     return False
