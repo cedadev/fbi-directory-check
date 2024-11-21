@@ -286,7 +286,7 @@ class RescanDirs:
                     for d in ds:
                         files = glob.glob(f'{d}/**/*.nc', recursive=True)
                         scan_files += files
-                logger.info(f'({idx}/{total_json}) {len(files)} datasets ({file.split("/")[-1]}) ({len(scan_files)} total)')
+                logger.info(f'({idx+1}/{total_json}) {len(files)} datasets ({file.split("/")[-1]}) ({len(scan_files)} total)')
 
         return scan_files
 
@@ -311,7 +311,7 @@ class RescanDirs:
                 action = DEPOSIT
 
             if self._dryrun:
-                print(path, action)
+                logger.info(f'{action}: {path}')
                 continue
 
             if self.use_rabbit:
@@ -335,8 +335,10 @@ class RescanDirs:
 
 def main():
 
+    logger.info("Starting rescan check")
     if check_timeout():
         return
+    logger.info("Archive access check: SUCCESS")
 
     r = RescanDirs('')
     if not r.use_rabbit:
