@@ -20,7 +20,10 @@ import json
 import re
 import glob
 
+from fbi_directory_check import logstream
 logger = logging.getLogger(__name__)
+logger.addHandler(logstream)
+logger.propagate = False
 
 
 class RabbitMQConnection:
@@ -293,7 +296,9 @@ class RescanDirs:
                 if file.endswith('.json'):
                     with open(file) as reader:
                         data = json.load(reader)
-                    scan_files += data['datasets']
+                    ds = data['datasets']
+
+                scan_files += glob.glob(f'{ds}/**/*.nc')
 
         return scan_files
 
