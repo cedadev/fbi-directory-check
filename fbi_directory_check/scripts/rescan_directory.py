@@ -20,8 +20,11 @@ import json
 import re
 import glob
 
-logging.basicConfig(level=logging.INFO)
+from fbi_directory_check import logstream
+
 logger = logging.getLogger(__name__)
+logger.addHandler(logstream)
+logger.propagate = False
 
 
 class RabbitMQConnection:
@@ -199,7 +202,8 @@ class RescanDirs:
                             help='Level of depth for scanning (1,2,3)')
         parser.add_argument('-R','--use-rabbit',dest='use_rabbit',
                             help='Deposit to rabbit queues or return list of paths')
-        
+        parser.add_argument('-v','--verbose', action='count', default=2, help='Set level of verbosity for logs')
+
         #parser.add_argument('--no-files', dest='nofiles', action='store_true', help='Ignore files')
         
         # Removed the ability to publish whole directories
@@ -285,7 +289,9 @@ class RescanDirs:
                 if file.endswith('.json'):
                     with open(file) as reader:
                         data = json.load(reader)
-                    scan_files += data['datasets']
+                    ds = data['datasets']
+
+                scan_files += glob.glob(f'{ds}/**/*.nc')
 
         return scan_files
 

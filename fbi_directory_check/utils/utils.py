@@ -11,8 +11,10 @@ __contact__ = 'richard.d.smith@stfc.ac.uk'
 import os
 import logging
 
-logging.basicConfig(level=logging.INFO)
+from fbi_directory_check import logstream
 logger = logging.getLogger(__name__)
+logger.addHandler(logstream)
+logger.propagate = False
 
 def set_verbose(level: int):
     """
