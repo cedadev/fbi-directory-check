@@ -273,7 +273,7 @@ class RescanDirs:
             # Pull files from json
             logger.info(f'Scanning JSON directory: {self.scan_path}')
             scanpath = f'{os.path.abspath(self.scan_path)}/**/*'
-            jsons = glob.glob(scanpath)
+            jsons = glob.glob(scanpath, recursive=True)
 
             total_json = len(jsons)
             for idx, file in enumerate(jsons):
