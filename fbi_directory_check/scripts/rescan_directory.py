@@ -14,7 +14,7 @@ from six.moves.configparser import RawConfigParser
 from datetime import datetime
 from fbi_directory_check.utils.constants import DEPOSIT, MKDIR, README, SYMLINK
 import pika
-from fbi_directory_check.utils import walk_storage_links, set_verbose
+from fbi_directory_check.utils import walk_storage_links, set_verbose, check_timeout
 import logging
 import json
 import re
@@ -271,7 +271,7 @@ class RescanDirs:
 
         else:
             # Pull files from json
-            scanpath = f'{os.path.abspath(self.scan_path)}/*'
+            scanpath = f'{os.path.abspath(self.scan_path)}/**/*'
             if self.scan_level == 1:
                 logger.info('Attempting to get changed/new json files.')
                 try:
@@ -290,7 +290,8 @@ class RescanDirs:
                         data = json.load(reader)
                     ds = data['datasets']
 
-                scan_files += glob.glob(f'{ds}/**/*.nc')
+                    print(ds)
+                    scan_files += glob.glob(f'{ds}/**/*.nc')
 
         return scan_files
 
@@ -338,11 +339,15 @@ class RescanDirs:
             f.write('\n'.join(outdata))
 
 def main():
-    r = RescanDirs('')
-    if not r.use_rabbit:
-        r.save_data(r.scan())
-    else:
-        _ = r.scan()
+
+    if check_timeout():
+        return
+
+        r = RescanDirs('')
+        if not r.use_rabbit:
+            r.save_data(r.scan())
+        else:
+            _ = r.scan()
 
 if __name__ == '__main__':
     main()

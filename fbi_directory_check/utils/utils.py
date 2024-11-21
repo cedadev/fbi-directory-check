@@ -10,6 +10,7 @@ __contact__ = 'richard.d.smith@stfc.ac.uk'
 
 import os
 import logging
+import asyncio
 
 from fbi_directory_check import logstream
 logger = logging.getLogger(__name__)
@@ -121,3 +122,35 @@ def walk_storage_links(path: str, depth: int = 0, max_depth: int = None):
         else:
             # If the path is not a link, recurse
             yield from walk_storage_links(new_path, depth, max_depth)
+
+def check_timeout():
+
+    from pathlib import Path, _ignore_error as pathlib_ignore_error
+    import aiofiles.os
+
+    async def path_exists(path) -> bool:
+        try:
+            await aiofiles.os.stat(str(path))
+        except OSError as e:
+            if not pathlib_ignore_error(e):
+                raise
+            return False
+        except ValueError:
+            # Non-encodable path
+            return False
+        return True
+
+    async def listfile():
+        async with asyncio.timeout(10):
+            await path_exists('/neodc/esacci/esacci_terms_and_conditions.txt')
+
+    try:
+        status = asyncio.run(listfile())
+    except TimeoutError:
+        logger.error('ESACCI Directories inaccessible')
+        return True
+
+    if not status:
+        logger.error('ESACCI Directories inaccessible')
+        return True
+    return False
