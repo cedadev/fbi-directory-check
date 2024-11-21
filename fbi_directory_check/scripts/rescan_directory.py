@@ -14,7 +14,7 @@ from six.moves.configparser import RawConfigParser
 from datetime import datetime
 from fbi_directory_check.utils.constants import DEPOSIT, MKDIR, README, SYMLINK
 import pika
-from fbi_directory_check.utils import walk_storage_links
+from fbi_directory_check.utils import walk_storage_links, set_verbose
 import logging
 import json
 import re
@@ -218,7 +218,8 @@ class RescanDirs:
                             help='Level of depth for scanning (1,2,3)')
         parser.add_argument('-R','--use-rabbit',dest='use_rabbit',
                             help='Deposit to rabbit queues or return list of paths')
-        
+        parser.add_argument('-v','--verbose', action='count', default=2, help='Set level of verbosity for logs')
+
         #parser.add_argument('--no-files', dest='nofiles', action='store_true', help='Ignore files')
         
         # Removed the ability to publish whole directories
@@ -229,6 +230,8 @@ class RescanDirs:
         parser.add_argument('--file-regex', dest='file_regex', 
                             help='Matching file regex, by default regex applies to all files not starting with "."')
         args = parser.parse_args()
+
+        set_verbose(args.verbose)
 
         self.__init__(
             args.dir,
