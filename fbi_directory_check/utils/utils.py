@@ -126,11 +126,11 @@ def walk_storage_links(path: str, depth: int = 0, max_depth: int = None):
 def check_timeout():
 
     from pathlib import Path, _ignore_error as pathlib_ignore_error
-    import aiofiles.os
+    import aiofiles.os as aos
 
     async def path_exists(path) -> bool:
         try:
-            await aiofiles.os.stat(str(path))
+            await aos.stat(str(path))
         except OSError as e:
             if not pathlib_ignore_error(e):
                 raise
@@ -143,14 +143,15 @@ def check_timeout():
     async def listfile():
         async with asyncio.timeout(10):
             await path_exists('/neodc/esacci/esacci_terms_and_conditions.txt')
+            return True
 
     try:
         status = asyncio.run(listfile())
     except TimeoutError:
-        logger.error('ESACCI Directories inaccessible')
+        logger.error('TIMEOUT: ESACCI Directories inaccessible')
         return True
 
     if not status:
-        logger.error('ESACCI Directories inaccessible')
+        logger.error('INACCESSIBLE: ESACCI Directories inaccessible')
         return True
     return False

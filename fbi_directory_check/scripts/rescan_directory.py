@@ -260,7 +260,7 @@ class RescanDirs:
 
         scan_files = []
 
-        if self.scan_level == 3: # All files under a directory
+        if self.scan_level == 2: # All files under a directory
             logger.info('Scanning directories')
             for root, dirs, files in walk_storage_links(self.scan_path, max_depth=self.max_depth):
                 for file in files:
@@ -272,26 +272,20 @@ class RescanDirs:
         else:
             # Pull files from json
             scanpath = f'{os.path.abspath(self.scan_path)}/**/*'
-            if self.scan_level == 1:
-                logger.info('Attempting to get changed/new json files.')
-                try:
-                    jsons = get_changed_files()
-                except:
-                    jsons = glob.glob(scanpath)
-            else:
-                jsons = glob.glob(scanpath)
+            jsons = glob.glob(scanpath)
 
-            for file in jsons:
-                logger.info(f'Extracting from {file}')
-
+            total_json = len(jsons)
+            for idx, file in enumerate(jsons):
                 # Only want to track the changes in the JSON directory
                 if file.endswith('.json'):
                     with open(file) as reader:
                         data = json.load(reader)
                     ds = data['datasets']
 
-                    print(ds)
-                    scan_files += glob.glob(f'{ds}/**/*.nc')
+                    for d in ds:
+                        files = glob.glob(f'{d}/**/*.nc', recursive=True)
+                        scan_files += files
+                logger.info(f'({idx}/{total_json}) {len(files)} datasets ({file.split("/")[-1]}) ({len(scan_files)} total)')
 
         return scan_files
 
