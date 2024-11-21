@@ -212,7 +212,6 @@ class RescanDirs:
         parser.add_argument('--dry-run', dest='dryrun', action='store_true', help='Display log messages to screen rather than pushing to rabbit')
 
         parser.add_argument('-o','--output',dest='output', help='Store output list in a file.')
-        parser.add_argument('-v','--verbose',action='count',dest='verbose',help='Verbose output')
 
         parser.add_argument('--file-regex', dest='file_regex', 
                             help='Matching file regex, by default regex applies to all files not starting with "."')
