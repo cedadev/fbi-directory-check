@@ -21,6 +21,7 @@ import re
 import glob
 
 from fbi_directory_check import logstream
+
 logger = logging.getLogger(__name__)
 logger.addHandler(logstream)
 logger.propagate = False
@@ -98,32 +99,13 @@ class RabbitMQConnection:
         )
 
 
-def get_args():
-    """
-    Command line arguments
-    :return:
-    """
-
-    default_config = os.path.join(os.path.dirname(__file__), '../conf/index_updater.ini')
-
-    parser = argparse.ArgumentParser(description='Submit directories to be re-scanned.')
-    parser.add_argument('dir', type=str, help='Directory to scan')
-    parser.add_argument('-r', dest='recursive', action='store_true',
-                        help='Recursive. Will include all directories below this point as well')
-    parser.add_argument('--no-files', dest='nofiles', action='store_true', help='Ignore files')
-    parser.add_argument('--no-dirs', dest='nodirs', action='store_true', help='Ignore directories')
-    parser.add_argument('--conf', type=str, default=default_config, help='Optional path to configuration file')
-    parser.add_argument('--dry-run', dest='dryrun', action='store_true', help='Display log messages to screen rather than pushing to rabbit')
-
-    return parser.parse_args()
-
-
+"""
 def get_dataset_filelist(dataset):
     """
-    Query Elasticsearch for the list of files in the changed dataset
-    :param dataset: path to root of dataset
-    :return: list of file paths
-    """
+    #Query Elasticsearch for the list of files in the changed dataset
+    #:param dataset: path to root of dataset
+    #:return: list of file paths
+"""
 
     query = {
         "_source": {
@@ -147,7 +129,7 @@ def get_dataset_filelist(dataset):
     ]
 
     return file_list
-
+"""
 
 def check_valid_path(path):
     """
@@ -174,6 +156,7 @@ class RescanDirs:
             skip_files: bool = False,
             recursive: bool = False,
             file_regex: str = None,
+            output: str = None
         ) -> None:
 
         if scan_path == '':
@@ -192,6 +175,7 @@ class RescanDirs:
 
         self._dryrun = dryrun
         self._recursive = recursive
+        self._output = output
 
         self.skip_dirs = skip_dirs
         self.skip_files = skip_files
@@ -214,7 +198,7 @@ class RescanDirs:
         parser.add_argument('-r', dest='recursive', action='store_true',
                             help='Recursive. Will include all directories below this point as well')
 
-        parser.add_argument('-l','--scan-level',dest='scan_level',
+        parser.add_argument('-l','--scan-level',type=int, dest='scan_level',
                             help='Level of depth for scanning (1,2,3)')
         parser.add_argument('-R','--use-rabbit',dest='use_rabbit',
                             help='Deposit to rabbit queues or return list of paths')
@@ -226,6 +210,9 @@ class RescanDirs:
         #parser.add_argument('--no-dirs', dest='nodirs', action='store_true', help='Ignore directories')
         parser.add_argument('--conf', type=str, default=default_config, help='Optional path to configuration file')
         parser.add_argument('--dry-run', dest='dryrun', action='store_true', help='Display log messages to screen rather than pushing to rabbit')
+
+        parser.add_argument('-o','--output',dest='output', help='Store output list in a file.')
+        parser.add_argument('-v','--verbose',action='count',dest='verbose',help='Verbose output')
 
         parser.add_argument('--file-regex', dest='file_regex', 
                             help='Matching file regex, by default regex applies to all files not starting with "."')
@@ -240,7 +227,8 @@ class RescanDirs:
             conf=args.conf,
             dryrun=args.dryrun,
             recursive=args.recursive,
-            file_regex=args.file_regex
+            file_regex=args.file_regex,
+            output=args.output
         )
 
     def _setup_rabbit(self):
@@ -271,24 +259,26 @@ class RescanDirs:
          - all known directories
         """
 
-        # Scan level
-        # scan directory/json directory
-        # Regex name pattern
-
         scan_files = []
 
         if self.scan_level == 3: # All files under a directory
-            for file in walk_storage_links(self.scan_path, max_depth=self.max_depth):
-                if not re.match(self.file_regex, file):
-                    continue
+            logger.info('Scanning directories')
+            for root, dirs, files in walk_storage_links(self.scan_path, max_depth=self.max_depth):
+                for file in files:
+                    if not re.match(self.file_regex, file):
+                        continue
 
-                scan_files.append(file)
+                    scan_files.append(f'{root}/{file}')
 
         else:
             # Pull files from json
             scanpath = f'{os.path.abspath(self.scan_path)}/*'
             if self.scan_level == 1:
-                jsons = None#get_changed_files()
+                logger.info('Attempting to get changed/new json files.')
+                try:
+                    jsons = get_changed_files()
+                except:
+                    jsons = glob.glob(scanpath)
             else:
                 jsons = glob.glob(scanpath)
 
@@ -338,8 +328,24 @@ class RescanDirs:
         logger.info(f'Submitted {output_files} files')
         return deposit_paths
 
+    def save_data(self, outdata):
+
+        if self._output is None:
+            for line in outdata:
+                print(line)
+            return
+        
+        with open(self._output,'w') as f:
+            f.write('\n'.join(outdata))
+
+def main():
+    r = RescanDirs('')
+    if not r.use_rabbit:
+        r.save_data(r.scan())
+    else:
+        _ = r.scan()
+
 if __name__ == '__main__':
-    r = RescanDirs()
-    r.save_data(r.scan())
+    main()
     
 

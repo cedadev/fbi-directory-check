@@ -11,6 +11,11 @@ __contact__ = 'richard.d.smith@stfc.ac.uk'
 import os
 import logging
 
+from fbi_directory_check import logstream
+logger = logging.getLogger(__name__)
+logger.addHandler(logstream)
+logger.propagate = False
+
 def set_verbose(level: int):
     """
     Reset the logger basic config.
@@ -86,8 +91,7 @@ def walk_storage_links(path: str, depth: int = 0, max_depth: int = None):
                 except StopIteration:
                     break
             except OSError as error:
-                if onerror is not None:
-                    onerror(error)
+                logger.error(error)
                 return
 
             try:

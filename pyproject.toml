@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fbi-directory-check"
-version = "1.3.0"
+version = "0.2.1"
 description = "Perform directory rescans to check against the elasticsearch index"
 authors = ["Daniel Westwood <daniel.westwood@stfc.ac.uk>, Rhys Evans <rhys.evans@stfc.ac.uk>"]
 license = "BSD 4 - See License file"
