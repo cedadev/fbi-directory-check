@@ -278,15 +278,26 @@ class RescanDirs:
             total_json = len(jsons)
             for idx, file in enumerate(jsons):
                 # Only want to track the changes in the JSON directory
-                if file.endswith('.json'):
-                    with open(file) as reader:
-                        data = json.load(reader)
-                    ds = data['datasets']
+                if not file.endswith('.json'):
+                    continue
 
-                    for d in ds:
-                        files = glob.glob(f'{d}/**/*.nc', recursive=True)
-                        scan_files += files
-                logger.info(f'({idx+1}/{total_json}) {len(files)} datasets ({file.split("/")[-1]}) ({len(scan_files)} total)')
+                with open(file) as reader:
+                    data = json.load(reader)
+                if 'datasets' not in data:
+                    logger.warning(f'File {file}: missing "datasets" attribute')
+                    continue
+                ds = data['datasets']
+
+                if not hasattr(ds, '__iter__'):
+                    logger.warning(f'File {file}: "datasets" property is not iterable.')
+                    continue
+
+                ncfiles = []
+                for d in ds:
+                    ncfiles = glob.glob(f'{d}/**/*.nc', recursive=True)
+                    scan_files += ncfiles
+
+                logger.info(f'({idx+1}/{total_json}) {len(ncfiles)} datasets ({file.split("/")[-1]}) ({len(scan_files)} total)')
 
         return scan_files
 
