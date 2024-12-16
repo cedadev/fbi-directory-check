@@ -272,11 +272,12 @@ class RescanDirs:
         else:
             # Pull files from json
             logger.info(f'Scanning JSON directory: {self.scan_path}')
-            scanpath = f'{os.path.abspath(self.scan_path)}/**/*'
+            scanpath = f'{os.path.abspath(self.scan_path)}/**/*.json'
             jsons = glob.glob(scanpath, recursive=True)
 
             total_json = len(jsons)
             for idx, file in enumerate(jsons):
+                logger.info(f'Processing {file}')
                 # Only want to track the changes in the JSON directory
                 if not file.endswith('.json'):
                     continue
@@ -292,12 +293,13 @@ class RescanDirs:
                     logger.warning(f'File {file}: "datasets" property is not iterable.')
                     continue
 
-                ncfiles = []
+                dfiles = []
                 for d in ds:
-                    ncfiles = glob.glob(f'{d}/**/*.nc', recursive=True)
-                    scan_files += ncfiles
+                    # Find all single files
+                    dfiles = [f for f in glob.glob(f'{d}/**/*.*', recursive=True) if '.txt' not in f]
+                    scan_files += dfiles
 
-                logger.info(f'({idx+1}/{total_json}) {len(ncfiles)} datasets ({file.split("/")[-1]}) ({len(scan_files)} total)')
+                logger.info(f'({idx+1}/{total_json}) {len(dfiles)} datasets ({file.split("/")[-1]}) ({len(scan_files)} total)')
 
         return scan_files
 
