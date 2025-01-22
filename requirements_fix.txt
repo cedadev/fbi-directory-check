@@ -1,0 +1,1 @@
+https://github.com/cedadev/ceda-elasticsearch-tools/archive/v2.5.0a.tar.gz
