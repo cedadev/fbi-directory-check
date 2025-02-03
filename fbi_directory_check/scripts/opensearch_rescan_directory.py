@@ -8,14 +8,16 @@ __copyright__ = 'Copyright 2018 United Kingdom Research and Innovation'
 __license__ = 'BSD - see LICENSE file in top-level package directory'
 __contact__ = 'richard.d.smith@stfc.ac.uk'
 
-import pika
 import argparse
+import json
+import os
 from configparser import RawConfigParser
 from datetime import datetime
-from fbi_directory_check.utils.constants import DEPOSIT
+
+import pika
+
 from fbi_directory_check.utils import walk_storage_links
-import os
-import json
+from fbi_directory_check.utils.constants import DEPOSIT
 
 
 class RabbitMQConnection(object):

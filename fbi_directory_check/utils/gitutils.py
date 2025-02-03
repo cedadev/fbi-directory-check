@@ -1,5 +1,6 @@
 import subprocess
-from typing import Tuple, List
+from typing import List, Tuple
+
 
 def run_git_command(command: str) -> str:
     """

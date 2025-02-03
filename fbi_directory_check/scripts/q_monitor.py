@@ -9,8 +9,9 @@ __license__ = 'BSD - see LICENSE file in top-level package directory'
 __contact__ = 'richard.d.smith@stfc.ac.uk'
 
 import os
-from six.moves.configparser import RawConfigParser
+
 import persistqueue
+from six.moves.configparser import RawConfigParser
 
 
 def main():

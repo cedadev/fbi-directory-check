@@ -8,11 +8,12 @@ __copyright__ = 'Copyright 2018 United Kingdom Research and Innovation'
 __license__ = 'BSD - see LICENSE file in top-level package directory'
 __contact__ = 'richard.d.smith@stfc.ac.uk'
 
-import os
-import logging
 import asyncio
+import logging
+import os
 
 from fbi_directory_check import logstream
+
 logger = logging.getLogger(__name__)
 logger.addHandler(logstream)
 logger.propagate = False
@@ -125,7 +126,9 @@ def walk_storage_links(path: str, depth: int = 0, max_depth: int = None):
 
 def check_timeout():
 
-    from pathlib import Path, _ignore_error as pathlib_ignore_error
+    from pathlib import Path
+    from pathlib import _ignore_error as pathlib_ignore_error
+
     import aiofiles.os as aos
 
     async def path_exists(path) -> bool:

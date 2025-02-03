@@ -9,20 +9,23 @@ __license__ = 'BSD - see LICENSE file in top-level package directory'
 __contact__ = 'richard.d.smith@stfc.ac.uk'
 
 
-import persistqueue
-from six.moves.configparser import RawConfigParser
-import os
-from fbi_directory_check.utils import get_line_in_file
-import requests
+import argparse
 import logging
+import os
+from datetime import datetime
+from hashlib import sha1
+from os.path import normpath
+
+import persistqueue
+import pika
+import requests
 from ceda_elasticsearch_tools.elasticsearch import CEDAElasticsearchClient
 from elasticsearch.helpers import scan
-import argparse
-from os.path import normpath
-from datetime import datetime
-from fbi_directory_check.utils.constants import DEPOSIT, REMOVE, MKDIR, RMDIR, README
-import pika
-from hashlib import sha1
+from six.moves.configparser import RawConfigParser
+
+from fbi_directory_check.utils import get_line_in_file
+from fbi_directory_check.utils.constants import (DEPOSIT, MKDIR, README,
+                                                 REMOVE, RMDIR)
 
 logger = logging.getLogger()
 

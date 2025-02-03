@@ -8,20 +8,22 @@ __copyright__ = 'Copyright 2018 United Kingdom Research and Innovation'
 __license__ = 'BSD - see LICENSE file in top-level package directory'
 __contact__ = 'richard.d.smith@stfc.ac.uk'
 
-import os
 import argparse
-from typing import Union
-from six.moves.configparser import RawConfigParser
-from datetime import datetime
-from fbi_directory_check.utils.constants import DEPOSIT, MKDIR, README, SYMLINK
-import pika
-from fbi_directory_check.utils import walk_storage_links, set_verbose, check_timeout
-import logging
-import json
-import re
 import glob
+import json
+import logging
+import os
+import re
+from datetime import datetime
+from typing import Union
+
+import pika
+from six.moves.configparser import RawConfigParser
 
 from fbi_directory_check import logstream
+from fbi_directory_check.utils import (check_timeout, set_verbose,
+                                       walk_storage_links)
+from fbi_directory_check.utils.constants import DEPOSIT, MKDIR, README, SYMLINK
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logstream)

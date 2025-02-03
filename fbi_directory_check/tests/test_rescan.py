@@ -7,6 +7,7 @@ __contact__ = 'daniel.westwood@stfc.ac.uk'
 
 from fbi_directory_check.scripts.rescan_directory import RescanDirs
 
+
 class TestRescan:
     def test_rescan_1(self):
         # Pull Files from json file.

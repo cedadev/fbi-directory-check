@@ -9,9 +9,11 @@ __license__ = 'BSD - see LICENSE file in top-level package directory'
 __contact__ = 'richard.d.smith@stfc.ac.uk'
 
 
-from pyfakefs.fake_filesystem_unittest import TestCase
-import unittest
 import os
+import unittest
+
+from pyfakefs.fake_filesystem_unittest import TestCase
+
 from fbi_directory_check.utils import walk_storage_links
 
 

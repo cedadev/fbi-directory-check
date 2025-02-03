@@ -9,10 +9,12 @@ __license__ = 'BSD - see LICENSE file in top-level package directory'
 __contact__ = 'richard.d.smith@stfc.ac.uk'
 
 
-import unittest
 import os
+import unittest
 from shutil import rmtree
-from fbi_directory_check.scripts.consistency_checker import ElasticsearchConsistencyChecker
+
+from fbi_directory_check.scripts.consistency_checker import \
+    ElasticsearchConsistencyChecker
 
 #################################################
 #                                               #

@@ -11,10 +11,11 @@ __contact__ = 'richard.d.smith@stfc.ac.uk'
 
 import argparse
 import os
+
 import persistqueue
 from six.moves import configparser
-from fbi_directory_check.utils import walk_storage_links
 
+from fbi_directory_check.utils import walk_storage_links
 
 ###############################################################
 #                                                             #
