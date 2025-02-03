@@ -1,6 +1,6 @@
 [project]
 name = "fbi-directory-check"
-version = "0.3.0"
+version = "0.3.1"
 description = "Perform directory rescans to check against the elasticsearch index"
 authors = [
     { name = "Daniel Westwood", email = "daniel.westwood@stfc.ac.uk"},

@@ -163,9 +163,14 @@ class RescanDirs:
             self._init_from_args()
             return
         
-        check_valid_path(scan_path)
+        if scan_level == 1:
+            # Directory level search
+            check_valid_path(scan_path)
 
-        self.scan_path = os.path.abspath(scan_path)
+            self.scan_path = os.path.abspath(scan_path)
+        else:
+            self.scan_path = scan_path
+
         self.scan_level = scan_level
         self.use_rabbit = use_rabbit
         self.conf = conf
@@ -252,10 +257,12 @@ class RescanDirs:
 
     def _determine_paths(self):
         """
-        Three scan levels:
-         - just latest json dataset directories
-         - all json dataset directories
-         - all known directories
+        Obtain the list of filepaths to enter
+        into the facet scanner.
+
+        This is either based on a file path, gathering
+        all files under a directory (with a given regex),
+        or based on a submission of JSON files.
         """
 
         scan_files = []
