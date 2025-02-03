@@ -10,6 +10,7 @@ __contact__ = 'richard.d.smith@stfc.ac.uk'
 
 import os
 import argparse
+from typing import Union
 from six.moves.configparser import RawConfigParser
 from datetime import datetime
 from fbi_directory_check.utils.constants import DEPOSIT, MKDIR, README, SYMLINK
@@ -155,7 +156,8 @@ class RescanDirs:
             skip_dirs: bool = False,
             skip_files: bool = False,
             recursive: bool = False,
-            file_regex: str = None,
+            file_regex: Union[str,None] = None,
+            extension: str = 'nc',
             output: str = None
         ) -> None:
 
@@ -176,7 +178,8 @@ class RescanDirs:
         self.conf = conf
 
         # Default match any filename not starting with a . dot
-        self.file_regex = file_regex or '^(?![.])'
+        self._file_regex = file_regex
+        self._extension  = extension
 
         self._dryrun = dryrun
         self._recursive = recursive
@@ -186,6 +189,26 @@ class RescanDirs:
         self.skip_files = skip_files
 
         self.routing_key = 'elasticsearch_update_queue_opensearch_ingest'
+
+    @property
+    def file_regex(self):
+        if self._file_regex is not None and self._extension is not None:
+            regex = f'{self._file_regex}(.{self._extension})$'
+            try:
+                re.compile(regex)
+                return regex
+            except re.error:
+                raise ValueError(
+                    'Incompatible regex and extensions given - '
+                    f'{regex} is not valid regular expression.'
+                )
+        if self._extension is not None:
+            return f'.+?(.{self._extension})$'
+        elif self._file_regex is not None:
+            return self._file_regex
+        else:
+            return '.+'
+
 
     @property
     def max_depth(self):
@@ -220,6 +243,8 @@ class RescanDirs:
 
         parser.add_argument('--file-regex', dest='file_regex', 
                             help='Matching file regex, by default regex applies to all files not starting with "."')
+        parser.add_argument('--extension', dest='extension', 
+                            help='Matching files by file extension.', default='nc')
         args = parser.parse_args()
 
         set_verbose(args.verbose)
@@ -232,7 +257,8 @@ class RescanDirs:
             dryrun=args.dryrun,
             recursive=args.recursive,
             file_regex=args.file_regex,
-            output=args.output
+            output=args.output,
+            extension=args.extension
         )
 
     def _setup_rabbit(self):
@@ -303,7 +329,7 @@ class RescanDirs:
                 dfiles = []
                 for d in ds:
                     # Find all single files
-                    dfiles = [f for f in glob.glob(f'{d}/**/*.*', recursive=True) if '.txt' not in f]
+                    dfiles = [f for f in glob.glob(f'{d}/**/*.*', recursive=True) if re.match(self.file_regex,f)]
                     scan_files += dfiles
 
                 logger.info(f'({idx+1}/{total_json}) {len(dfiles)} datasets ({file.split("/")[-1]}) ({len(scan_files)} total)')
