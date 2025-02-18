@@ -1,5 +1,7 @@
 # FBI Directory Scanner
 
+![Static Badge](https://img.shields.io/badge/cci%20tagger%20workflow-8AD6F6)
+
 This code connects to a local disk based queue and is used to submit directories to be checked against the
 elasticsearch index.
 
