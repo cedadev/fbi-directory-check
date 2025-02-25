@@ -159,7 +159,7 @@ class RescanDirs:
             skip_files: bool = False,
             recursive: bool = False,
             file_regex: Union[str,None] = None,
-            extension: str = 'nc',
+            extension: Union[str,None] = 'nc',
             output: str = None
         ) -> None:
 
@@ -244,9 +244,10 @@ class RescanDirs:
         parser.add_argument('-o','--output',dest='output', help='Store output list in a file.')
 
         parser.add_argument('--file-regex', dest='file_regex', 
-                            help='Matching file regex, by default regex applies to all files not starting with "."')
+                            help='Matching file regex, by default regex applies to all files not starting with "."',
+                            default=None)
         parser.add_argument('--extension', dest='extension', 
-                            help='Matching files by file extension.', default='nc')
+                            help='Matching files by file extension.', default=None)
         args = parser.parse_args()
 
         set_verbose(args.verbose)
@@ -311,7 +312,7 @@ class RescanDirs:
             jsons = glob.glob(scanpath, recursive=True)
 
             total_json = len(jsons)
-            for idx, file in enumerate(jsons):
+            for js_count, file in enumerate(jsons):
                 logger.info(f'Processing {file}')
                 # Only want to track the changes in the JSON directory
                 if not file.endswith('.json'):
@@ -329,12 +330,13 @@ class RescanDirs:
                     continue
 
                 dfiles = []
-                for d in ds:
+                for ds_count, d in enumerate(ds):
                     # Find all single files
                     dfiles = [f for f in glob.glob(f'{d}/**/*.*', recursive=True) if re.match(self.file_regex,f)]
                     scan_files += dfiles
 
-                logger.info(f'({idx+1}/{total_json}) {len(dfiles)} datasets ({file.split("/")[-1]}) ({len(scan_files)} total)')
+                    logger.info(f'(j: {js_count+1}/{len(jsons)}, d: {ds_count}/{len(ds)})')
+                    logger.info(f' > {len(dfiles)} datasets ({file.split("/")[-1]}) ({len(scan_files)} total)')
 
         return scan_files
 
