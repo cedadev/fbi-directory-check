@@ -335,7 +335,7 @@ class RescanDirs:
                     dfiles = [f for f in glob.glob(f'{d}/**/*.*', recursive=True) if re.match(self.file_regex,f)]
                     scan_files += dfiles
 
-                    logger.info(f'(j: {js_count+1}/{len(jsons)}, d: {ds_count}/{len(ds)})')
+                    logger.info(f'(j: {js_count+1}/{len(jsons)}, d: {ds_count+1}/{len(ds)})')
                     logger.info(f' > {len(dfiles)} datasets ({file.split("/")[-1]}) ({len(scan_files)} total)')
 
         return scan_files
