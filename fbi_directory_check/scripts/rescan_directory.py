@@ -159,7 +159,7 @@ class RescanDirs:
             skip_files: bool = False,
             recursive: bool = False,
             file_regex: Union[str,None] = None,
-            extension: Union[str,None] = 'nc',
+            extension: Union[str,None] = None,
             output: str = None
         ) -> None:
 
@@ -311,7 +311,6 @@ class RescanDirs:
             scanpath = f'{os.path.abspath(self.scan_path)}/**/*.json'
             jsons = glob.glob(scanpath, recursive=True)
 
-            total_json = len(jsons)
             for js_count, file in enumerate(jsons):
                 logger.info(f'Processing {file}')
                 # Only want to track the changes in the JSON directory
