@@ -17,7 +17,8 @@ class TestRescan:
         rd = RescanDirs(
             scan_path,
             scan_level=scan_level,
-            output=None
+            output=None,
+            extension='nc'
         )
 
         assert len(rd.scan()) == 10
@@ -30,7 +31,8 @@ class TestRescan:
         rd = RescanDirs(
             scan_path,
             scan_level=scan_level,
-            output=None
+            output=None,
+            extension='nc'
         )
 
         assert len(rd.scan()) == 10
