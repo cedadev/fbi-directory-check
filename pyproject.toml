@@ -77,3 +77,5 @@ fbi_rescan_dir = "fbi_directory_check.scripts.rescan_directory:main"
 #
 opensearch_rescan_dir = "fbi_directory_check.scripts.opensearch_rescan_directory:main"
 #
+stac_rescan_dir = "fbi_directory_check.scripts.stac_rescan:main"
+#
