@@ -8,19 +8,23 @@ __contact__ = "richard.d.smith@stfc.ac.uk"
 
 import argparse
 import json
+import logging
 import os
 import re
 from configparser import RawConfigParser
 
+from fbi_directory_check import logstream
 from fbi_directory_check.core.rabbit_connection import RabbitMQConnection
 from fbi_directory_check.utils import valid_path, walk_storage_links
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logstream)
+logger.propagate = False
 
 
 def get_args():
     default_config = os.path.join(os.path.dirname(__file__), "../conf/stac_updater.ini")
-    parser = argparse.ArgumentParser(
-        description="Submit paths to be re-scanned for stac."
-    )
+    parser = argparse.ArgumentParser(description="Submit paths to be re-scanned for stac.")
     parser.add_argument("dir", help="Directory to add to scan", type=str)
     parser.add_argument(
         "-t",
@@ -49,18 +53,19 @@ def main():
 
     valid_path(args.dir)
 
-    # Check for tags only flag
-    # routing_key = f'deposit.log.{DepositAction.DEPOSIT.value}'
-    routing_key = ""
-
     # Get the full path
     abs_root = os.path.abspath(args.dir)
 
-    # Submit items to rabbit queue for processing
+    logger.info("Connecting to Rabbit")
     rabbit_connection = RabbitMQConnection(args.conf)
 
     conf = RawConfigParser()
     conf.read(args.conf)
+
+    logging_level = conf.get("logging", "log-level")
+    logger.setLevel(getattr(logging, logging_level.upper()))
+
+    routing_key = conf.get("scan", "routing_key", fallback="item")
 
     regex = rf"{conf.get("scan", "regex", fallback=".*")}"
 
@@ -72,6 +77,8 @@ def main():
 
     file_count = 0
     dir_count = 0
+
+    logger.info(f"Starting scan of {abs_root}")
 
     for root, dirs, files in walk_storage_links(abs_root, max_depth=max_depth):
         if args.type == "dir":
@@ -94,7 +101,7 @@ def main():
 
                     file_count += 1
 
-    print(f"Found and submitted  {dir_count} directories and {file_count} files.")
+    logger.info(f"Found and submitted {dir_count} directories and {file_count} files.")
 
 
 if __name__ == "__main__":
